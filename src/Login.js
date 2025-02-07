@@ -16,6 +16,7 @@ const Login = () => {
       name: decoded.name,
       email: decoded.email,
       picture: decoded.picture,
+      tokenId: credentialResponse.credential, // Include the raw token
     });
     console.log(credentialResponse);
     const user = await oktoClient.loginUsingOAuth({

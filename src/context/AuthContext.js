@@ -14,7 +14,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData) => {
-    setUser(userData);
+    // Make sure to include tokenId in the stored user data
+    setUser({
+      email: userData.email,
+      name: userData.name,
+      picture: userData.picture,
+      tokenId: userData.tokenId  // Store the token
+    });
     localStorage.setItem('snakeGameUser', JSON.stringify(userData));
   };
 
