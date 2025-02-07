@@ -264,18 +264,18 @@ const SnakeGame = () => {
     }
   }
 
-  const transferTokenToTreasury=async () => {
-    const tokenToTransfer=0.1;
-    await convertUsdToWei
+  // const transferTokenToTreasury=async () => {
+  //   const tokenToTransfer=0.1;
+  //   await convertUsdToWei
 
-    const transferParams = {
-      amount: Number(quantity),
-      recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
-      token: "",
-      chain: "eip155:42161",
-    };
-    tokenTransfer(oktoClient, );
-  }
+  //   const transferParams = {
+  //     amount: Number(quantity),
+  //     recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
+  //     token: "",
+  //     chain: "eip155:42161",
+  //   };
+  //   tokenTransfer(oktoClient, );
+  // }
 
   const getStatusClass = () => {
     switch (gameStatus) {
