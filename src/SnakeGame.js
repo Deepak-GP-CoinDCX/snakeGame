@@ -156,8 +156,7 @@ const SnakeGame = ({ user }) => {
       await transferTokenToTreasury();
 
       // Update portfolio balance
-      const newBalance = await sdk.getPortfolioBalance(walletAddress);
-      setPortfolioBalance(newBalance);
+    await fetchPortfolio();
       
       // Reset game state with initial snake of length 3
       const initialSnake = [
@@ -496,7 +495,6 @@ const SnakeGame = ({ user }) => {
       const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
       const data = await response.json();
       const exchangeRate = data.ethereum.usd;
-  
       // Convert USD to ETH
       const ethAmount = usdAmount / exchangeRate;
   
@@ -526,8 +524,12 @@ const SnakeGame = ({ user }) => {
     const signedUserOp = await oktoClient.signUserOp(userOp);
     console.log(signedUserOp);
     const tx = await oktoClient.executeUserOp(signedUserOp);
-    console.log("txHash"-tx);
+    console.log("txHash",tx);
+    oktoClient.waitForTx(tx);
+
   }
+
+  
 
 
   // Initialize Web3 connection
