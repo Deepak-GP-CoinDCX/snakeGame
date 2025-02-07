@@ -10,6 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@okto_web3/react-sdk": "^0.0.0-dev.24",
+    "@react-oauth/google": "^0.12.1",
+    "buffer": "^6.0.3",
+    "jwt-decode": "^4.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
