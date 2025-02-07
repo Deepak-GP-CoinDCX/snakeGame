@@ -135,8 +135,7 @@ const SnakeGame = ({ user }) => {
         );
 
         // Update portfolio balance
-        const newBalance = await sdk.getPortfolioBalance(walletAddress);
-        setPortfolioBalance(newBalance);
+        fetchPortfolio();
         
         setError(null);
       } catch (err) {
