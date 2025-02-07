@@ -5,6 +5,7 @@ import AppContent from './AppContent';
 import './App.css';
 import { Buffer } from "buffer";
 import { OktoProvider } from "@okto_web3/react-sdk";
+import { OktoClientProvider } from './context/OktoClientContext';
 const GOOGLE_CLIENT_ID="870353306344-qcbm04ctma0ejm39cf0qj61b6u17u9vg.apps.googleusercontent.com";
 // Ensure Buffer is available globally
 
@@ -25,8 +26,10 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
-      <OktoProvider config={config}>
-        <AppContent />
+        <OktoProvider config={config}>
+          <OktoClientProvider>
+            <AppContent />
+          </OktoClientProvider>
         </OktoProvider>
       </AuthProvider>
     </GoogleOAuthProvider>

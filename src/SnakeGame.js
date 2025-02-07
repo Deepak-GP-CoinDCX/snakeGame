@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './SnakeGame.css';
-import { getPortfolio, useOkto } from "@okto_web3/react-sdk";
-
+import { Address,getPortfolio, tokenTransfer, useOkto } from "@okto_web3/react-sdk";
+import { useGlobalOktoClient } from './context/OktoClientContext';
 const GAME_CONFIG = {
   BOARD_WIDTH: 400,
   BOARD_HEIGHT: 400,
@@ -62,7 +62,7 @@ const SnakeGame = () => {
   const gameLoopRef = useRef(null);
   const timeIntervalRef = useRef(null);
   const canvasRef = useRef(null);
-  const oktoClient = useOkto(); 
+  const oktoClient = useGlobalOktoClient(); 
 
   const getCurrentTier = useCallback(() => {
     return TIERS.find(
@@ -225,7 +225,10 @@ const SnakeGame = () => {
     const fetchPortfolio = async () => {
       try {
         const portfolio = await getPortfolio(oktoClient);
-        setPortfolioBalance(portfolio.aggregatedData.holdingsPriceUsdt);
+        //if not empty
+        if (portfolio.aggregatedData.totalHoldingPriceInr !==""){
+          setPortfolioBalance(Number(portfolio.aggregatedData.totalHoldingPriceInr));
+        }
       } catch (error) {
         console.error('Error fetching portfolio:', error);
       }
@@ -236,11 +239,24 @@ const SnakeGame = () => {
   const refreshPortfolio = async () => {
     try {
       const portfolio = await getPortfolio(oktoClient);
-      setPortfolioBalance(portfolio.aggregatedData.holdingsPriceUsdt);
+      console.log(portfolio.aggregatedData.totalHoldingPriceInr.toFixed(2));
+      if (portfolio.aggregatedData.totalHoldingPriceInr !==""){
+        setPortfolioBalance(Number(portfolio.aggregatedData.totalHoldingPriceInr));
+      }
     } catch (error) {
       console.error('Error fetching portfolio:', error);
     }
   };
+
+  const transferTokenToTreasury=async () => {
+    const transferParams = {
+      amount: Number(quantity),
+      recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
+      token: "",
+      chain: "eip155:42161",
+    };
+    tokenTransfer(oktoClient, );
+  }
 
   const getStatusClass = () => {
     switch (gameStatus) {
@@ -323,7 +339,7 @@ const SnakeGame = () => {
             <div className="stat-row">
               <span>Portfolio Balance</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>${portfolioBalance.toFixed(2)} USDT</span>
+                <span>₹{portfolioBalance.toFixed(2)} INR</span>
                 <button 
                   onClick={refreshPortfolio}
                   style={{

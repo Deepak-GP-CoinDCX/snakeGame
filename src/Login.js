@@ -4,10 +4,11 @@ import { jwtDecode } from 'jwt-decode';
 import { useAuth } from './context/AuthContext';
 import './Login.css';
 import { getPortfolio, tokenTransfer, useOkto } from "@okto_web3/react-sdk";
+import { useGlobalOktoClient } from './context/OktoClientContext';
 
 const Login = () => {
   const { login } = useAuth();
-  const oktoClient = useOkto(); 
+  const oktoClient = useGlobalOktoClient(); 
 
   const handleSuccess = async (credentialResponse) => {
     const decoded = jwtDecode(credentialResponse.credential);
@@ -16,14 +17,12 @@ const Login = () => {
       email: decoded.email,
       picture: decoded.picture,
     });
+    console.log(credentialResponse);
     const user = await oktoClient.loginUsingOAuth({
       idToken: credentialResponse.credential,
       provider: "google",
     });
     console.log(user);
-    
-    
-    
   };
 
   const handleError = () => {
