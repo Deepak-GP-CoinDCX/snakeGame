@@ -188,6 +188,16 @@
   }
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 .score-container,
 .portfolio-container {
   display: flex;

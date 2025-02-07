@@ -80,6 +80,7 @@ const SnakeGame = ({ user }) => {
   const [pulseFrame, setPulseFrame] = useState(0);
   const [orders, setOrders] = useState([]);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [showCopyNotification, setShowCopyNotification] = useState(false);
 
   // Web3 state
   const [walletAddress, setWalletAddress] = useState(null);
@@ -572,6 +573,18 @@ const SnakeGame = ({ user }) => {
     }
   };
 
+  const copyToClipboard = async () => {
+    if (walletAddress) {
+      try {
+        await navigator.clipboard.writeText(walletAddress);
+        setShowCopyNotification(true);
+        setTimeout(() => setShowCopyNotification(false), 2000); // Hide after 2 seconds
+      } catch (err) {
+        console.error('Failed to copy address:', err);
+      }
+    }
+  };
+
   // Initialize Web3 connection
   useEffect(() => {
     const initializeWeb3 = async () => {
@@ -717,6 +730,47 @@ const SnakeGame = ({ user }) => {
                 >
                   🔄
                 </button>
+              </div>
+            </div>
+            <div className="stat-row">
+              <span>Address</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                <span style={{ fontSize: '0.8em', wordBreak: 'break-all' }}>
+                  {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Not connected'}
+                </span>
+                {walletAddress && (
+                  <>
+                    <button
+                      onClick={copyToClipboard}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        fontSize: '1em'
+                      }}
+                      title="Copy address"
+                    >
+                      📋
+                    </button>
+                    {showCopyNotification && (
+                      <div style={{
+                        position: 'absolute',
+                        right: '-80px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: '#4CAF50',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.8em',
+                        animation: 'fadeIn 0.3s'
+                      }}>
+                        Copied!
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
             <div className="stat-row">
