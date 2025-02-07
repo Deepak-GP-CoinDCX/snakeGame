@@ -257,25 +257,31 @@ const SnakeGame = () => {
   
       // Convert ETH to Wei (1 ETH = 10^18 Wei)
       const weiAmount = ethAmount * 1e18;
-  
+      const weiBigInt =  Number(Math.floor(weiAmount).toString());
+
       console.log(`${usdAmount} USD is approximately ${weiAmount} Wei`);
+      return weiBigInt;
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
     }
   }
 
-  // const transferTokenToTreasury=async () => {
-  //   const tokenToTransfer=0.1;
-  //   await convertUsdToWei
+  const transferTokenToTreasury=async () => {
+    const tokenToTransfer=0.1;
+    var weiAmount=await convertUsdToWei(tokenToTransfer)
 
-  //   const transferParams = {
-  //     amount: Number(quantity),
-  //     recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
-  //     token: "",
-  //     chain: "eip155:42161",
-  //   };
-  //   tokenTransfer(oktoClient, );
-  // }
+    const transferParams = {
+      amount: weiAmount,
+      recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
+      chain: "eip155:42161",
+    };
+    const userOp=await tokenTransfer(oktoClient,transferParams );
+    console.log(userOp);
+    const signedUserOp = await oktoClient.signUserOp(userOp);
+    console.log(signedUserOp);
+    const tx = await oktoClient.executeUserOp(signedUserOp);
+    console.log(tx);
+  }
 
   const getStatusClass = () => {
     switch (gameStatus) {
