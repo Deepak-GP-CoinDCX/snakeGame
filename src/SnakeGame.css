@@ -10,6 +10,7 @@
 
 .game-board {
   position: relative;
+  overflow: hidden;
 }
 
 .game-canvas {
@@ -168,4 +169,44 @@
   font-size: 0.9rem;
   color: #ccc;
   margin: 0.25rem 0;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.score-popup {
+  position: absolute;
+  color: #FFD700;
+  font-weight: bold;
+  font-size: 16px;
+  pointer-events: none;
+  animation: floatUp 0.8s ease-out forwards;
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+.ripple {
+  position: absolute;
+  border: 2px solid #4CAF50;
+  border-radius: 50%;
+  animation: ripple 0.6s ease-out forwards;
+  pointer-events: none;
 }

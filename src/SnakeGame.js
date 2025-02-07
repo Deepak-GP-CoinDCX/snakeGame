@@ -9,59 +9,67 @@ const GAME_CONFIG = {
   INITIAL_SPEED: 150,
   ENTRY_FEE: 5,
   BASE_THRESHOLD: 500,
-  INITIAL_SNAKE_SIZE: 3
+  ANIMATION_DURATION: 800, // Duration for animations in ms
 };
 
-const TIERS = [
-  { 
-    name: 'Noob', 
-    minScore: 0, 
-    maxScore: 500, 
-    multiplier: 1,
-    speedMultiplier: 1
-  },
-  { 
-    name: 'Ape', 
-    minScore: 500, 
-    maxScore: 1000, 
-    multiplier: 1.5,
-    speedMultiplier: 0.85
-  },
-  { 
-    name: 'Hodler', 
-    minScore: 1000, 
-    maxScore: 2000, 
-    multiplier: 2,
-    speedMultiplier: 0.7
-  },
-  { 
-    name: 'Diamond Hands', 
-    minScore: 2000, 
-    maxScore: 3500, 
-    multiplier: 3,
-    speedMultiplier: 0.6
-  },
-  { 
-    name: 'Satoshi', 
-    minScore: 3500, 
-    maxScore: Infinity, 
-    multiplier: 5,
-    speedMultiplier: 0.5
-  }
-];
+// Animation frames for the snake's pulse effect
+const PULSE_FRAMES = Array.from({ length: 8 }, (_, i) => {
+  const progress = i / 7; // 0 to 1
+  const scale = 1 + Math.sin(progress * Math.PI) * 0.3; // Creates a sine wave effect
+  return scale;
+});
 
 const SnakeGame = () => {
   const [snake, setSnake] = useState([{ x: 10, y: 10 }]);
   const [food, setFood] = useState({ x: 15, y: 15 });
-  const [direction, setDirection] = useState({ x: 0, y: 0 });
+  const [direction, setDirection] = useState({ x: 1, y: 0 });
   const [gameStatus, setGameStatus] = useState('READY');
   const [score, setScore] = useState(0);
   const [gameTime, setGameTime] = useState(0);
   const [reward, setReward] = useState(0);
-
+  const [animations, setAnimations] = useState([]);
+  const [pulseFrame, setPulseFrame] = useState(0);
+  
   const gameLoopRef = useRef(null);
   const timeIntervalRef = useRef(null);
+  const animationFrameRef = useRef(null);
   const canvasRef = useRef(null);
+
+  // Function to add a new score popup animation
+  const addScorePopup = useCallback((x, y, points) => {
+    const id = Date.now();
+    const element = document.createElement('div');
+    element.className = 'score-popup';
+    element.textContent = `+${points}`;
+    element.style.left = `${x}px`;
+    element.style.top = `${y}px`;
+    
+    const gameBoard = document.querySelector('.game-board');
+    if (gameBoard) {
+      gameBoard.appendChild(element);
+      setTimeout(() => {
+        element.remove();
+      }, GAME_CONFIG.ANIMATION_DURATION);
+    }
+  }, []);
+
+  // Function to add a ripple effect
+  const addRippleEffect = useCallback((x, y) => {
+    const element = document.createElement('div');
+    element.className = 'ripple';
+    element.style.left = `${x - 20}px`;
+    element.style.top = `${y - 20}px`;
+    element.style.width = '40px';
+    element.style.height = '40px';
+    
+    const gameBoard = document.querySelector('.game-board');
+    if (gameBoard) {
+      gameBoard.appendChild(element);
+      setTimeout(() => {
+        element.remove();
+      }, 600);
+    }
+  }, []);
 
   const getCurrentTier = useCallback(() => {
     return TIERS.find(tier => score >= tier.minScore && score < tier.maxScore) || TIERS[0];
@@ -98,6 +106,8 @@ const SnakeGame = () => {
     setGameTime(0);
     setGameStatus('PLAYING');
     setReward(0);
+    setPulseFrame(0);
+    setAnimations([]);
 
     timeIntervalRef.current = setInterval(() => {
       setGameTime(prev => prev + 1);
@@ -140,16 +150,49 @@ const SnakeGame = () => {
       newSnake.unshift(head);
 
       if (head.x === food.x && head.y === food.y) {
-        setScore(prevScore => prevScore + 10);
+        const currentTier = getCurrentTier();
+        const points = Math.floor(10 * currentTier.multiplier);
+        setScore(prevScore => prevScore + points);
         setFood(generateFood());
-        setReward(calculateReward());
+        
+        // Trigger animations
+        setPulseFrame(0); // Start pulse animation
+        const pixelX = head.x * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2;
+        const pixelY = head.y * GAME_CONFIG.GRID_SIZE;
+        addScorePopup(pixelX, pixelY, points);
+        addRippleEffect(pixelX, pixelY + GAME_CONFIG.GRID_SIZE / 2);
+        
+        // Animate each segment of the snake with a delay
+        newSnake.forEach((_, index) => {
+          setTimeout(() => {
+            setAnimations(prev => [...prev, { index, time: Date.now() }]);
+          }, index * 50);
+        });
       } else {
         newSnake.pop();
       }
 
       return newSnake;
     });
-  }, [direction, food, gameStatus, calculateReward]);
+  }, [direction, food, gameStatus, addScorePopup, addRippleEffect]);
+
+  // Animation loop for snake pulse effect
+  useEffect(() => {
+    if (pulseFrame < PULSE_FRAMES.length) {
+      const timeout = setTimeout(() => {
+        setPulseFrame(prev => prev + 1);
+      }, 50);
+      return () => clearTimeout(timeout);
+    }
+  }, [pulseFrame]);
+
+  // Clean up animations after they're done
+  useEffect(() => {
+    if (animations.length > 0) {
+      const now = Date.now();
+      setAnimations(prev => prev.filter(anim => now - anim.time < 300));
+    }
+  }, [animations]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -216,25 +259,43 @@ const SnakeGame = () => {
       ctx.stroke();
     }
 
-    // Draw snake with gradient and tier badge
+    // Draw snake with animation effects
     snake.forEach((segment, index) => {
+      const isAnimating = animations.some(anim => anim.index === index);
+      const isPulsing = index === 0 && pulseFrame < PULSE_FRAMES.length;
+      
+      const scale = isPulsing ? PULSE_FRAMES[pulseFrame] : 1;
+      const glowIntensity = isAnimating ? 15 : (index === 0 ? 10 : 5);
+
+      // Calculate center position for scaling
+      const centerX = segment.x * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2;
+      const centerY = segment.y * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2;
+      
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(scale, scale);
+      ctx.translate(-centerX, -centerY);
+
+      // Create gradient
       const gradient = ctx.createLinearGradient(
         segment.x * GAME_CONFIG.GRID_SIZE,
         segment.y * GAME_CONFIG.GRID_SIZE,
         (segment.x + 1) * GAME_CONFIG.GRID_SIZE,
         (segment.y + 1) * GAME_CONFIG.GRID_SIZE
       );
-      gradient.addColorStop(0, '#4CAF50');
-      gradient.addColorStop(1, '#45a049');
+      gradient.addColorStop(0, isAnimating ? '#64DD17' : '#4CAF50');
+      gradient.addColorStop(1, isAnimating ? '#4CAF50' : '#45a049');
       
       ctx.fillStyle = gradient;
       ctx.shadowColor = '#4CAF50';
-      ctx.shadowBlur = index === 0 ? 10 : 5;
+      ctx.shadowBlur = glowIntensity;
+      
+      const size = GAME_CONFIG.GRID_SIZE - 1;
       ctx.fillRect(
-        segment.x * GAME_CONFIG.GRID_SIZE,
-        segment.y * GAME_CONFIG.GRID_SIZE,
-        GAME_CONFIG.GRID_SIZE - 1,
-        GAME_CONFIG.GRID_SIZE - 1
+        segment.x * GAME_CONFIG.GRID_SIZE + (GAME_CONFIG.GRID_SIZE - size) / 2,
+        segment.y * GAME_CONFIG.GRID_SIZE + (GAME_CONFIG.GRID_SIZE - size) / 2,
+        size,
+        size
       );
 
       // Draw tier badge inside snake head
@@ -252,8 +313,9 @@ const SnakeGame = () => {
           segment.x * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2,
           segment.y * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2
         );
-        ctx.shadowBlur = 0;
       }
+      
+      ctx.restore();
     });
 
     // Draw food with glow effect
@@ -270,7 +332,7 @@ const SnakeGame = () => {
     );
     ctx.fill();
     ctx.shadowBlur = 0;
-  }, [snake, food, getCurrentTier]);
+  }, [snake, food, getCurrentTier, animations, pulseFrame]);
 
   const getStatusClass = () => {
     switch (gameStatus) {
@@ -359,5 +421,43 @@ const SnakeGame = () => {
     </div>
   );
 };
+
+const TIERS = [
+  { 
+    name: 'Noob', 
+    minScore: 0, 
+    maxScore: 500, 
+    multiplier: 1,
+    speedMultiplier: 1
+  },
+  { 
+    name: 'Ape', 
+    minScore: 500, 
+    maxScore: 1000, 
+    multiplier: 1.5,
+    speedMultiplier: 0.85
+  },
+  { 
+    name: 'Hodler', 
+    minScore: 1000, 
+    maxScore: 2000, 
+    multiplier: 2,
+    speedMultiplier: 0.7
+  },
+  { 
+    name: 'Diamond Hands', 
+    minScore: 2000, 
+    maxScore: 3500, 
+    multiplier: 3,
+    speedMultiplier: 0.6
+  },
+  { 
+    name: 'Satoshi', 
+    minScore: 3500, 
+    maxScore: Infinity, 
+    multiplier: 5,
+    speedMultiplier: 0.5
+  }
+];
 
 export default SnakeGame;
