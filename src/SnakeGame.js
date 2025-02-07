@@ -525,7 +525,6 @@ const SnakeGame = ({ user }) => {
     console.log(signedUserOp);
     const tx = await oktoClient.executeUserOp(signedUserOp);
     console.log("txHash",tx);
-    oktoClient.waitForTx(tx);
 
   }
 
