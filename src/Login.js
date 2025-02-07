@@ -3,17 +3,27 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from './context/AuthContext';
 import './Login.css';
+import { getPortfolio, tokenTransfer, useOkto } from "@okto_web3/react-sdk";
 
 const Login = () => {
   const { login } = useAuth();
+  const oktoClient = useOkto(); 
 
-  const handleSuccess = (credentialResponse) => {
+  const handleSuccess = async (credentialResponse) => {
     const decoded = jwtDecode(credentialResponse.credential);
     login({
       name: decoded.name,
       email: decoded.email,
       picture: decoded.picture,
     });
+    const user = await oktoClient.loginUsingOAuth({
+      idToken: credentialResponse.credential,
+      provider: "google",
+    });
+    console.log(user);
+    
+    
+    
   };
 
   const handleError = () => {

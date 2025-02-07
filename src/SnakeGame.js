@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './SnakeGame.css';
+import { getPortfolio, useOkto } from "@okto_web3/react-sdk";
 
 const GAME_CONFIG = {
   BOARD_WIDTH: 400,
@@ -56,10 +57,12 @@ const SnakeGame = () => {
   const [score, setScore] = useState(0);
   const [gameTime, setGameTime] = useState(0);
   const [reward, setReward] = useState(0);
+  const [portfolioBalance, setPortfolioBalance] = useState(0);
 
   const gameLoopRef = useRef(null);
   const timeIntervalRef = useRef(null);
   const canvasRef = useRef(null);
+  const oktoClient = useOkto(); 
 
   const getCurrentTier = useCallback(() => {
     return TIERS.find(
@@ -218,6 +221,27 @@ const SnakeGame = () => {
     );
   }, [snake, food]);
 
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      try {
+        const portfolio = await getPortfolio(oktoClient);
+        setPortfolioBalance(portfolio.aggregatedData.holdingsPriceUsdt);
+      } catch (error) {
+        console.error('Error fetching portfolio:', error);
+      }
+    };
+    fetchPortfolio();
+  }, []);
+
+  const refreshPortfolio = async () => {
+    try {
+      const portfolio = await getPortfolio(oktoClient);
+      setPortfolioBalance(portfolio.aggregatedData.holdingsPriceUsdt);
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+    }
+  };
+
   const getStatusClass = () => {
     switch (gameStatus) {
       case 'PLAYING': return 'status-playing';
@@ -292,6 +316,26 @@ const SnakeGame = () => {
             <div className="stat-row">
               <span>Potential Reward</span>
               <span className="reward">${reward.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div className="stats-section">
+            <div className="stat-row">
+              <span>Portfolio Balance</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>${portfolioBalance.toFixed(2)} USDT</span>
+                <button 
+                  onClick={refreshPortfolio}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px'
+                  }}
+                >
+                  🔄
+                </button>
+              </div>
             </div>
           </div>
 
