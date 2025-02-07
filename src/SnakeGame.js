@@ -516,7 +516,7 @@ const SnakeGame = ({ user }) => {
     var weiAmount=await convertUsdToWei(tokenToTransfer)
 
     const transferParams = {
-      amount: Number(100000000000000),
+      amount: weiAmount,
       recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
       chain: "eip155:42161",
       
