@@ -1,54 +1,49 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { TIER_ICONS } from './tierIcons';
 import './SnakeGame.css';
 
 const GAME_CONFIG = {
   BOARD_WIDTH: 400,
   BOARD_HEIGHT: 400,
   GRID_SIZE: 20,
-  INITIAL_SPEED: 200,
+  INITIAL_SPEED: 150,
   ENTRY_FEE: 5,
-  BASE_THRESHOLD: 500
+  BASE_THRESHOLD: 500,
+  INITIAL_SNAKE_SIZE: 3
 };
 
 const TIERS = [
   { 
-    name: 'Beginner', 
+    name: 'Noob', 
     minScore: 0, 
     maxScore: 500, 
     multiplier: 1,
     speedMultiplier: 1
   },
   { 
-    name: 'Novice', 
+    name: 'Ape', 
     minScore: 500, 
     maxScore: 1000, 
-    multiplier: 1.2,
-    speedMultiplier: 0.9
+    multiplier: 1.5,
+    speedMultiplier: 0.85
   },
   { 
-    name: 'Apprentice', 
+    name: 'Hodler', 
     minScore: 1000, 
     maxScore: 2000, 
-    multiplier: 1.5,
-    speedMultiplier: 0.8
-  },
-  { 
-    name: 'Expert', 
-    minScore: 2000, 
-    maxScore: 3500, 
     multiplier: 2,
     speedMultiplier: 0.7
   },
   { 
-    name: 'Master', 
-    minScore: 3500, 
-    maxScore: 5000, 
+    name: 'Diamond Hands', 
+    minScore: 2000, 
+    maxScore: 3500, 
     multiplier: 3,
     speedMultiplier: 0.6
   },
   { 
-    name: 'Legendary', 
-    minScore: 5000, 
+    name: 'Satoshi', 
+    minScore: 3500, 
     maxScore: Infinity, 
     multiplier: 5,
     speedMultiplier: 0.5
@@ -92,7 +87,11 @@ const SnakeGame = () => {
   };
 
   const startGame = () => {
-    setSnake([{ x: 10, y: 10 }]);
+    const initialSnake = [];
+    for (let i = 0; i < 3; i++) {
+      initialSnake.push({ x: 10 - i, y: 10 });
+    }
+    setSnake(initialSnake);
     setFood(generateFood());
     setDirection({ x: 1, y: 0 });
     setScore(0);
@@ -217,7 +216,7 @@ const SnakeGame = () => {
       ctx.stroke();
     }
 
-    // Draw snake with gradient
+    // Draw snake with gradient and tier badge
     snake.forEach((segment, index) => {
       const gradient = ctx.createLinearGradient(
         segment.x * GAME_CONFIG.GRID_SIZE,
@@ -237,6 +236,24 @@ const SnakeGame = () => {
         GAME_CONFIG.GRID_SIZE - 1,
         GAME_CONFIG.GRID_SIZE - 1
       );
+
+      // Draw tier badge inside snake head
+      if (index === 0) {
+        const currentTier = getCurrentTier();
+        const icon = TIER_ICONS[currentTier.name];
+        ctx.font = '14px Arial';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 2;
+        ctx.fillText(
+          icon,
+          segment.x * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2,
+          segment.y * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2
+        );
+        ctx.shadowBlur = 0;
+      }
     });
 
     // Draw food with glow effect
@@ -252,10 +269,8 @@ const SnakeGame = () => {
       Math.PI * 2
     );
     ctx.fill();
-
-    // Reset shadow
     ctx.shadowBlur = 0;
-  }, [snake, food]);
+  }, [snake, food, getCurrentTier]);
 
   const getStatusClass = () => {
     switch (gameStatus) {
@@ -321,8 +336,8 @@ const SnakeGame = () => {
           <div className="stats-section">
             <div className="stat-row">
               <span>Current Tier</span>
-              <span className="tier-badge">
-                {getCurrentTier().name}
+              <span className={`tier-badge tier-${getCurrentTier().name.replace(' ', '-')}`}>
+                {TIER_ICONS[getCurrentTier().name]} {getCurrentTier().name}
               </span>
             </div>
           </div>

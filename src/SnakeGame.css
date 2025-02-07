@@ -108,11 +108,43 @@
 }
 
 .tier-badge {
-  background-color: #673AB7;
-  color: white;
   padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 0.9rem;
+  border-radius: 4px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tier-specific styles */
+.tier-Noob {
+  background-color: #808080;
+  color: white;
+}
+
+.tier-Ape {
+  background-color: #8B4513;
+  color: white;
+}
+
+.tier-Hodler {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.tier-Diamond-Hands {
+  background-color: #00BCD4;
+  color: white;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.tier-Satoshi {
+  background: linear-gradient(45deg, #FFD700, #FFA500);
+  color: white;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .reward {
