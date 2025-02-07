@@ -12,6 +12,13 @@ const GAME_CONFIG = {
 
 const TIERS = [
   { 
+    name: 'Beginner', 
+    minScore: 0, 
+    maxScore: 500, 
+    multiplier: 1,
+    speedMultiplier: 1
+  },
+  { 
     name: 'Novice', 
     minScore: 500, 
     maxScore: 1000, 
@@ -51,7 +58,7 @@ const TIERS = [
 const SnakeGame = () => {
   const [snake, setSnake] = useState([{ x: 10, y: 10 }]);
   const [food, setFood] = useState({ x: 15, y: 15 });
-  const [direction, setDirection] = useState('RIGHT');
+  const [direction, setDirection] = useState({ x: 0, y: 0 });
   const [gameStatus, setGameStatus] = useState('READY');
   const [score, setScore] = useState(0);
   const [gameTime, setGameTime] = useState(0);
@@ -62,15 +69,8 @@ const SnakeGame = () => {
   const canvasRef = useRef(null);
 
   const getCurrentTier = useCallback(() => {
-    return TIERS.find(
-      tier => score >= tier.minScore && score < tier.maxScore
-    ) || TIERS[TIERS.length - 1];
+    return TIERS.find(tier => score >= tier.minScore && score < tier.maxScore) || TIERS[0];
   }, [score]);
-
-  const getCurrentSpeed = useCallback(() => {
-    const currentTier = getCurrentTier();
-    return GAME_CONFIG.INITIAL_SPEED * currentTier.speedMultiplier;
-  }, [getCurrentTier]);
 
   const calculateReward = useCallback(() => {
     if (score < GAME_CONFIG.BASE_THRESHOLD) return 0;
@@ -82,7 +82,7 @@ const SnakeGame = () => {
       currentTier.multiplier
     );
 
-    return Math.round(additionalReward * 100) / 100;
+    return Math.max(0, Math.round(additionalReward * 100) / 100);
   }, [score, getCurrentTier]);
 
   const generateFood = () => {
@@ -94,11 +94,11 @@ const SnakeGame = () => {
   const startGame = () => {
     setSnake([{ x: 10, y: 10 }]);
     setFood(generateFood());
-    setDirection('RIGHT');
+    setDirection({ x: 1, y: 0 });
     setScore(0);
     setGameTime(0);
     setGameStatus('PLAYING');
-    setReward(GAME_CONFIG.ENTRY_FEE);
+    setReward(0);
 
     timeIntervalRef.current = setInterval(() => {
       setGameTime(prev => prev + 1);
@@ -120,13 +120,8 @@ const SnakeGame = () => {
       const newSnake = [...prevSnake];
       const head = { ...newSnake[0] };
 
-      switch (direction) {
-        case 'UP': head.y -= 1; break;
-        case 'DOWN': head.y += 1; break;
-        case 'LEFT': head.x -= 1; break;
-        case 'RIGHT': head.x += 1; break;
-        default: break;
-      }
+      head.x += direction.x;
+      head.y += direction.y;
 
       if (
         head.x < 0 || 
@@ -148,28 +143,33 @@ const SnakeGame = () => {
       if (head.x === food.x && head.y === food.y) {
         setScore(prevScore => prevScore + 10);
         setFood(generateFood());
+        setReward(calculateReward());
       } else {
         newSnake.pop();
       }
 
       return newSnake;
     });
-  }, [direction, food, gameStatus]);
+  }, [direction, food, gameStatus, calculateReward]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      e.preventDefault(); // Prevent scrolling
+      
+      if (gameStatus === 'GAME_OVER') return;
+
       switch (e.key) {
         case 'ArrowUp': 
-          if (direction !== 'DOWN') setDirection('UP'); 
+          if (direction.y === 0) setDirection({ x: 0, y: -1 }); 
           break;
         case 'ArrowDown': 
-          if (direction !== 'UP') setDirection('DOWN'); 
+          if (direction.y === 0) setDirection({ x: 0, y: 1 }); 
           break;
         case 'ArrowLeft': 
-          if (direction !== 'RIGHT') setDirection('LEFT'); 
+          if (direction.x === 0) setDirection({ x: -1, y: 0 }); 
           break;
         case 'ArrowRight': 
-          if (direction !== 'LEFT') setDirection('RIGHT'); 
+          if (direction.x === 0) setDirection({ x: 1, y: 0 }); 
           break;
         case ' ':
           setGameStatus(prev => 
@@ -184,14 +184,16 @@ const SnakeGame = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [direction]);
+  }, [direction, gameStatus]);
 
   useEffect(() => {
     if (gameStatus === 'PLAYING') {
-      gameLoopRef.current = setInterval(moveSnake, getCurrentSpeed());
+      const currentTier = getCurrentTier();
+      const gameSpeed = GAME_CONFIG.INITIAL_SPEED * currentTier.speedMultiplier;
+      gameLoopRef.current = setInterval(moveSnake, gameSpeed);
       return () => clearInterval(gameLoopRef.current);
     }
-  }, [gameStatus, moveSnake, getCurrentSpeed]);
+  }, [gameStatus, moveSnake, getCurrentTier]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -199,23 +201,60 @@ const SnakeGame = () => {
     
     ctx.clearRect(0, 0, GAME_CONFIG.BOARD_WIDTH, GAME_CONFIG.BOARD_HEIGHT);
 
-    ctx.fillStyle = '#4CAF50';
-    snake.forEach(segment => {
+    // Draw grid
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= GAME_CONFIG.BOARD_WIDTH; i += GAME_CONFIG.GRID_SIZE) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, GAME_CONFIG.BOARD_HEIGHT);
+      ctx.stroke();
+    }
+    for (let i = 0; i <= GAME_CONFIG.BOARD_HEIGHT; i += GAME_CONFIG.GRID_SIZE) {
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(GAME_CONFIG.BOARD_WIDTH, i);
+      ctx.stroke();
+    }
+
+    // Draw snake with gradient
+    snake.forEach((segment, index) => {
+      const gradient = ctx.createLinearGradient(
+        segment.x * GAME_CONFIG.GRID_SIZE,
+        segment.y * GAME_CONFIG.GRID_SIZE,
+        (segment.x + 1) * GAME_CONFIG.GRID_SIZE,
+        (segment.y + 1) * GAME_CONFIG.GRID_SIZE
+      );
+      gradient.addColorStop(0, '#4CAF50');
+      gradient.addColorStop(1, '#45a049');
+      
+      ctx.fillStyle = gradient;
+      ctx.shadowColor = '#4CAF50';
+      ctx.shadowBlur = index === 0 ? 10 : 5;
       ctx.fillRect(
-        segment.x * GAME_CONFIG.GRID_SIZE, 
-        segment.y * GAME_CONFIG.GRID_SIZE, 
-        GAME_CONFIG.GRID_SIZE - 1, 
+        segment.x * GAME_CONFIG.GRID_SIZE,
+        segment.y * GAME_CONFIG.GRID_SIZE,
+        GAME_CONFIG.GRID_SIZE - 1,
         GAME_CONFIG.GRID_SIZE - 1
       );
     });
 
+    // Draw food with glow effect
     ctx.fillStyle = '#F44336';
-    ctx.fillRect(
-      food.x * GAME_CONFIG.GRID_SIZE, 
-      food.y * GAME_CONFIG.GRID_SIZE, 
-      GAME_CONFIG.GRID_SIZE - 1, 
-      GAME_CONFIG.GRID_SIZE - 1
+    ctx.shadowColor = '#F44336';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(
+      food.x * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2,
+      food.y * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2,
+      GAME_CONFIG.GRID_SIZE / 2 - 1,
+      0,
+      Math.PI * 2
     );
+    ctx.fill();
+
+    // Reset shadow
+    ctx.shadowBlur = 0;
   }, [snake, food]);
 
   const getStatusClass = () => {
