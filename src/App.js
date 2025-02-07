@@ -1,17 +1,55 @@
-import React from 'react';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import { AuthProvider } from './context/AuthContext';
-import AppContent from './AppContent';
+import React, { useState, useEffect } from 'react';
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
+import SnakeGame from './SnakeGame';
 import './App.css';
 
-const GOOGLE_CLIENT_ID="870353306344-qcbm04ctma0ejm39cf0qj61b6u17u9vg.apps.googleusercontent.com"
 function App() {
+  const [user, setUser] = useState(null);
+
+  const handleLoginSuccess = (credentialResponse) => {
+    try {
+      const decoded = jwtDecode(credentialResponse.credential);
+      console.log('Login success, decoded user:', decoded); // Debug log
+      setUser({
+        email: decoded.email,
+        name: decoded.name,
+        picture: decoded.picture
+      });
+    } catch (error) {
+      console.error('Error decoding credentials:', error);
+    }
+  };
+
+  const handleLoginError = () => {
+    console.error('Login Failed');
+  };
+
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </GoogleOAuthProvider>
+    <div className="App">
+      <header className="App-header">
+        <h1>Snake Game</h1>
+        {!user ? (
+          <div className="login-container">
+            <p>Please login to play</p>
+            <GoogleLogin
+              onSuccess={handleLoginSuccess}
+              onError={handleLoginError}
+              useOneTap
+            />
+          </div>
+        ) : (
+          <div className="user-info">
+            <img src={user.picture} alt={user.name} className="user-avatar" />
+            <span>Welcome, {user.name}!</span>
+          </div>
+        )}
+      </header>
+      
+      <main>
+        <SnakeGame user={user} />
+      </main>
+    </div>
   );
 }
 
