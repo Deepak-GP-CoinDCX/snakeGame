@@ -726,7 +726,7 @@ const SnakeGame = ({ user }) => {
 
   return (
     <div className="game-container">
-      {gameStatus !== 'LOADING' && (
+      {gameStatus !== 'LOADING' && user?.email && (
         <div className="order-history-button">
           <button onClick={fetchOrderHistory}>
             Order History 📜
