@@ -239,7 +239,6 @@ const SnakeGame = () => {
   const refreshPortfolio = async () => {
     try {
       const portfolio = await getPortfolio(oktoClient);
-      console.log(portfolio.aggregatedData.totalHoldingPriceInr.toFixed(2));
       if (portfolio.aggregatedData.totalHoldingPriceInr !==""){
         setPortfolioBalance(Number(portfolio.aggregatedData.totalHoldingPriceInr));
       }
@@ -247,16 +246,36 @@ const SnakeGame = () => {
       console.error('Error fetching portfolio:', error);
     }
   };
+  async function convertUsdToWei(usdAmount) {
+    try {
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+      const data = await response.json();
+      const exchangeRate = data.ethereum.usd;
+  
+      // Convert USD to ETH
+      const ethAmount = usdAmount / exchangeRate;
+  
+      // Convert ETH to Wei (1 ETH = 10^18 Wei)
+      const weiAmount = ethAmount * 1e18;
+  
+      console.log(`${usdAmount} USD is approximately ${weiAmount} Wei`);
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+    }
+  }
 
-  // const transferTokenToTreasury=async () => {
-  //   const transferParams = {
-  //     amount: Number(quantity),
-  //     recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
-  //     token: "",
-  //     chain: "eip155:42161",
-  //   };
-  //   tokenTransfer(oktoClient, );
-  // }
+  const transferTokenToTreasury=async () => {
+    const tokenToTransfer=0.1;
+    await convertUsdToWei
+
+    const transferParams = {
+      amount: Number(quantity),
+      recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
+      token: "",
+      chain: "eip155:42161",
+    };
+    tokenTransfer(oktoClient, );
+  }
 
   const getStatusClass = () => {
     switch (gameStatus) {
