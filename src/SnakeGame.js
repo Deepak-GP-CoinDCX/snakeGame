@@ -468,6 +468,7 @@ const SnakeGame = ({ user }) => {
   }, [gameStatus, moveSnake, getCurrentTier]);
 
   useEffect(() => {
+    if (!canvasRef.current) return;  // <--- Add this null check
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
@@ -684,11 +685,6 @@ const SnakeGame = ({ user }) => {
   // Initialize Web3 connection
   useEffect(() => {
     const initializeWeb3 = async () => {
-      if (!user?.email || !user?.tokenId) {  // Check for tokenId
-        setGameStatus('READY');
-        return;
-      }
-
       try {
         setIsLoading(true);
         setLoadingMessage('Connecting to wallet...');
@@ -723,6 +719,15 @@ const SnakeGame = ({ user }) => {
 
     initializeWeb3();
   }, [user?.email, user?.tokenId]); // Add tokenId to dependencies
+
+  // Early return if user is not logged in
+  if (!user?.email) {
+    return (
+      <div style={{ textAlign: 'center', marginTop: '20px' }}>
+        <p></p>
+      </div>
+    );
+  }
 
   return (
     <div className="game-container">
