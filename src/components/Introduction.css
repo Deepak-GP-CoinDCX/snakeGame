@@ -1,0 +1,124 @@
+.introduction-container {
+  padding: 0 2rem;
+  width: 100%;
+  color: white;
+  background: none;
+  margin-top: 0.5rem;
+}
+
+.intro-content {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.intro-content h1 {
+  color: #4CAF50;
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.game-description {
+  font-size: 1rem;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.how-to-play h2, .game-features h2 {
+  color: #4CAF50;
+  margin: 0.75rem 0;
+  font-size: 1.5rem;
+}
+
+.instruction-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: transform 0.2s;
+  backdrop-filter: blur(5px);
+  font-size: 0.95rem;
+}
+
+.step:hover {
+  transform: translateX(10px);
+  background: rgba(76, 175, 80, 0.2);
+}
+
+.step-number {
+  background: #4CAF50;
+  color: white;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.game-features {
+  margin-bottom: 1rem;
+}
+
+.game-features ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.game-features li {
+  background: rgba(76, 175, 80, 0.1);
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: transform 0.2s;
+  backdrop-filter: blur(5px);
+  font-size: 0.95rem;
+}
+
+.game-features li:hover {
+  transform: translateY(-5px);
+  background: rgba(76, 175, 80, 0.2);
+}
+
+@media (max-width: 768px) {
+  .introduction-container {
+    padding: 0 1rem;
+    margin-top: 0.25rem;
+  }
+  
+  .intro-content h1 {
+    font-size: 1.75rem;
+  }
+  
+  .how-to-play h2, .game-features h2 {
+    font-size: 1.25rem;
+  }
+  
+  .game-features ul {
+    grid-template-columns: 1fr;
+  }
+  
+  .step:hover {
+    transform: none;
+  }
+  
+  .game-features li:hover {
+    transform: none;
+  }
+}
