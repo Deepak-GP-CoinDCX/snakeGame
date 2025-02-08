@@ -9,6 +9,7 @@ import { useGlobalOktoClient } from './context/OktoClientContext';
 import { ethers } from 'ethers';
 
 const GAME_CONFIG = {
+  DEV_MODE: true, // Set to false for okto web3 
   BOARD_WIDTH: 400,
   BOARD_HEIGHT: 400,
   GRID_SIZE: 20,
@@ -72,6 +73,7 @@ const ERC20_ABI = [
   "function balanceOf(address account) view returns (uint256)",
   "function decimals() view returns (uint8)"
 ];
+
 
 const SnakeGame = ({ user }) => {
   // Game state
@@ -237,7 +239,7 @@ const SnakeGame = ({ user }) => {
     const finalReward = calculateReward();
     const finalRewardUSDT = rewardToUsdt(finalReward);
 
-    if (finalRewardUSDT > 0) {
+    if (finalRewardUSDT > 0 && !GAME_CONFIG.DEV_MODE) {
       try {
         setLoadingMessage('Calculating gas fees...');
         setIsLoading(true);
@@ -262,11 +264,10 @@ const SnakeGame = ({ user }) => {
       setLoadingMessage('Processing entry fee...');
       setIsLoading(true);
 
-      // Transfer entry fee to house wallet
-      await transferTokenToTreasury();
-
-      // Update portfolio balance
-      await fetchPortfolio();
+      if (!GAME_CONFIG.DEV_MODE) {
+        await transferTokenToTreasury();
+        await fetchPortfolio();
+      }
 
       // Reset game state with initial snake of length 3
       const initialSnake = [
@@ -586,7 +587,7 @@ const SnakeGame = ({ user }) => {
 
 
   const fetchPortfolio = async () => {
-    try {
+        try {
       const portfolio = await getPortfolio(oktoClient);
       if (!portfolio.groupTokens) {
         setPortfolioBalance(0);
@@ -752,6 +753,15 @@ const SnakeGame = ({ user }) => {
   // Initialize Web3 connection
   useEffect(() => {
     const initializeWeb3 = async () => {
+      if (GAME_CONFIG.DEV_MODE) {
+        setWalletAddress("0x1234...5678");
+        setPortfolioBalance(100);
+        setGameStatus('READY');
+        setError(null);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setLoadingMessage('Connecting to wallet for user ' + user.name);
