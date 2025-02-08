@@ -436,7 +436,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #333;
+  background: #1a1a1a;
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -453,8 +453,40 @@
   color: #4CAF50;
   margin-bottom: 20px;
   font-size: 1.5rem;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(76, 175, 80, 0.2);
+  text-align: center;
+}
+
+.filter-section {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 0 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.filter-button {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  border-radius: 20px;
+  color: #fff;
+  padding: 8px 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.filter-button:hover {
+  background: rgba(76, 175, 80, 0.2);
+  transform: translateY(-1px);
+}
+
+.filter-button.active {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  color: #fff;
+  font-weight: 500;
 }
 
 .orders-list {
@@ -464,42 +496,51 @@
 }
 
 .order-item {
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.2);
+  background: rgba(76, 175, 80, 0.05);
+  border: 1px solid rgba(76, 175, 80, 0.1);
   border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  padding: 12px 16px;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.order-item:hover {
-  background: rgba(76, 175, 80, 0.15);
-  transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+.order-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .order-network {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
 .order-network .label {
   color: #999;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .order-network .value {
   color: #fff;
-  font-weight: 500;
 }
 
 .order-status {
   display: flex;
   align-items: center;
-  gap: 8px;
+}
+
+.order-amount {
+  margin-left: auto;
+  padding-left: 16px;
+}
+
+.order-amount .amount {
+  color: #4CAF50;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .status-indicator {
@@ -509,7 +550,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 12px;
+  margin-right: 8px;
 }
 
 .status-indicator.successful {
@@ -517,36 +559,28 @@
   color: #4CAF50;
 }
 
-.status-indicator.bundler-discarded {
-  background: rgba(255, 152, 0, 0.2);
-  color: #FF9800;
+.status-indicator.in-progress {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196F3;
+}
+
+.status-indicator.failed {
+  background: rgba(244, 67, 54, 0.2);
+  color: #F44336;
+}
+
+.order-status {
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
 }
 
 .status-text {
-  font-size: 0.9rem;
-  color: #fff;
-  text-transform: capitalize;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
-.order-amount {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.order-amount .amount {
-  color: #4CAF50;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.no-orders {
-  text-align: center;
-  color: #999;
-  padding: 24px;
-  font-size: 0.9rem;
-}
-
-.order-history-dialog .close-button {
+.close-button {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -554,20 +588,44 @@
   border: none;
   color: #999;
   cursor: pointer;
-  padding: 8px;
-  font-size: 1.2rem;
-  transition: color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
-.order-history-dialog .close-button:hover {
-  color: #fff;
+.close-button:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.no-orders {
+  text-align: center;
+  color: #999;
+  padding: 24px;
+  font-size: 0.95rem;
+  background: rgba(76, 175, 80, 0.05);
+  border: 1px solid rgba(76, 175, 80, 0.1);
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+@media (max-width: 480px) {
+  .order-history-dialog {
+    padding: 16px;
+  }
+
+  .filter-button {
+    padding: 6px 16px;
+    min-width: auto;
+  }
+
+  .filter-section {
+    gap: 6px;
+  }
 }
 
 @media (max-width: 768px) {
