@@ -19,11 +19,11 @@ const Login = () => {
       tokenId: credentialResponse.credential, // Include the raw token
     });
     console.log(credentialResponse);
-    const user = await oktoClient.loginUsingOAuth({
-      idToken: credentialResponse.credential,
-      provider: "google",
-    });
-    console.log(user);
+    // const user = await oktoClient.loginUsingOAuth({
+    //   idToken: credentialResponse.credential,
+    //   provider: "google",
+    // });
+    // console.log(user);
   };
 
   const handleError = () => {

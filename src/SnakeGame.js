@@ -122,35 +122,42 @@ const SnakeGame = ({ user }) => {
       default: return '';
     }
   };
-  const transferTokensWithPrivateKey = async (recipientAddress, amount) => {
-    try {
-      console.log("amount",amount);
-      const portfolio=await fetchPortfolio();
-      const usdRate=Number(portfolio.aggregatedData.totalHoldingPriceInr)/Number(portfolio.aggregatedData.totalHoldingPriceUsdt);
-      console.log("usdRate",usdRate);
-      const finalRewardInUsd=amount/usdRate;
-      console.log("finalRewardInUsd",finalRewardInUsd);
-      const rewardInWei = await convertUsdToWei(finalRewardInUsd);
-      const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
-      const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
+  // const transferTokensWithPrivateKey = async (recipientAddress, amount) => {
+  //   try {
+  //     amount=0.1;
+  //     recipientAddress=walletAddress;
+  //     console.log("amount",amount);
+  //     const portfolio=await fetchPortfolio();
+  //     const usdRate=Number(portfolio.aggregatedData.totalHoldingPriceInr)/Number(portfolio.aggregatedData.totalHoldingPriceUsdt);
+  //     console.log("usdRate",usdRate);
+  //     const finalRewardInUsd=amount/usdRate;
+  //     console.log("finalRewardInUsd",finalRewardInUsd);
+  //     const rewardInWei = await convertUsdToWei(finalRewardInUsd);
+  //     const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
+  //     const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
       
-      const tx = {
-        to: recipientAddress,
-        value: rewardInWei
-      };
+  //     const tx = {
+  //       to: recipientAddress,
+  //       value: rewardInWei
+  //     };
   
-      const transaction = await wallet.sendTransaction(tx);
-      await transaction.wait();
-      console.log('Transfer successful:', transaction.hash);
-      return transaction.hash;
-    } catch (error) {
-      console.error('Transfer error:', error);
-      throw error;
-    }
-  };
+  //     const transaction = await wallet.sendTransaction(tx);
+  //     await transaction.wait();
+  //     console.log('Transfer successful:', transaction.hash);
+  //     return transaction.hash;
+  //   } catch (error) {
+  //     console.error('Transfer error:', error);
+  //     throw error;
+  //   }
+  // };
 
-  const transferUSDT = async (recipientAddress, usdtAmount) => {
+  const transferUSDT = async (recipientAddress, inrAmount) => {
     try {
+      setIsLoading(true);
+      const tokenBalance=await fetchPortfolio();
+      const usdtRate=Number(tokenBalance.holdingsPriceInr)/Number(tokenBalance.holdingsPriceUsdt);
+      const usdtAmount=inrAmount/usdtRate;
+      recipientAddress="0x4358CC177AdF75A9f4Db0F54dEbb4F0D67A8c84A";
       const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
       const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
       
@@ -160,7 +167,7 @@ const SnakeGame = ({ user }) => {
       
       // Check USDT balance
       const balance = await usdtContract.balanceOf(wallet.address);
-      console.log('USDT balance:', ethers.utils.formatUnits(balance, decimals));
+      setLoadingMessage('USDT balance: '+ ethers.utils.formatUnits(balance, decimals));
       if (balance.lt(amountInSmallestUnit)) {
         throw new Error('Insufficient USDT balance');
       }
@@ -175,16 +182,19 @@ const SnakeGame = ({ user }) => {
       
       // Calculate total gas cost in MATIC
       const totalGasCost = adjustedGasPrice.mul(adjustedGasLimit);
+      console.log('Gas needed (MATIC):', ethers.utils.formatEther(totalGasCost));
       
       // Check MATIC balance
       const maticBalance = await provider.getBalance(wallet.address);
-      console.log('Gas needed (MATIC):', ethers.utils.formatEther(totalGasCost));
+      setLoadingMessage(`Gas needed (MATIC): ${ethers.utils.formatEther(totalGasCost)}\nMATIC balance: ${ethers.utils.formatEther(maticBalance)}`);
       console.log('MATIC balance:', ethers.utils.formatEther(maticBalance));
-      
+      //add 1 second delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       if (maticBalance.lt(totalGasCost)) {
         const neededMatic = ethers.utils.formatEther(totalGasCost);
         throw new Error(`Insufficient MATIC for gas. Need ${neededMatic} MATIC`);
       }
+      setLoadingMessage('Sending USDT transaction...');
 
       // Send transaction with explicit gas settings
       const tx = await usdtContract.transfer(recipientAddress, amountInSmallestUnit, {
@@ -194,6 +204,7 @@ const SnakeGame = ({ user }) => {
 
       const receipt = await tx.wait();
       console.log('USDT transfer successful:', receipt.transactionHash);
+
       console.log('Gas used:', receipt.gasUsed.toString());
       console.log('Gas price:', ethers.utils.formatUnits(receipt.effectiveGasPrice, 'gwei'), 'gwei');
       console.log('Total gas cost:', ethers.utils.formatEther(receipt.gasUsed.mul(receipt.effectiveGasPrice)), 'MATIC');
@@ -565,26 +576,59 @@ const SnakeGame = ({ user }) => {
   const fetchPortfolio = async () => {
     try {
       const portfolio = await getPortfolio(oktoClient);
-      //if not empty
-      if (portfolio.aggregatedData.totalHoldingPriceInr !==""){
-        setPortfolioBalance(Number(portfolio.aggregatedData.totalHoldingPriceInr));
+      if (!portfolio.groupTokens) {
+        setPortfolioBalance(0);
+        return null;
       }
-      return portfolio;
+      if (portfolio.groupTokens.length === 0) {
+        setPortfolioBalance(0);
+        return null;
+      }
+
+      // Find USDT token on Polygon network
+      for (const group of portfolio.groupTokens) {
+        if (group.networkName === 'POLYGON') {
+          for (const token of group.tokens) {
+            if (token.shortName === "USDT") {
+              setPortfolioBalance(Number(token.holdingsPriceInr));
+              console.log('Found USDT token:', token);
+              return token;
+            }
+          }
+        }
+      }
+      return null;
     } catch (error) {
       console.error('Error fetching portfolio:', error);
+      return null;
     }
   };
 
-  const refreshPortfolio = async () => {
-    try {
-      const portfolio = await getPortfolio(oktoClient);
-      if (portfolio.aggregatedData.totalHoldingPriceInr !==""){
-        setPortfolioBalance(Number(portfolio.aggregatedData.totalHoldingPriceInr));
-      }
-    } catch (error) {
-      console.error('Error fetching portfolio:', error);
-    }
-  };
+  // const fetchUSDTRate = async () => {
+  //   try {
+  //     const portfolio = await getPortfolio(oktoClient);
+  //     //for each to normal loop
+  //     if(portfolio.groupTokens.length===0){
+  //       setPortfolioBalance(0);
+  //       return;
+  //     }
+  //     //return the holdingsPriceInr/holidingsPriceUsdt
+  //     return portfolio.groupTokens.forEach((group) => {
+  //       if (group.networkName === 'POLYGON') {
+  //        return group.tokens.forEach((token) => {
+  //           if (token.shortName === "USDT") { 
+  //             setPortfolioBalance(Number(token.holdingsPriceInr));
+  //             console.log('INR balance:', token.holdingsPriceInr);
+  //             return Number(token.holdingsPriceInr)/Number(token.holdingsPriceUsdt);
+  //           }
+  //         });
+  //       }
+  //     });
+  //   } catch (error) {
+  //     console.error('Error fetching portfolio:', error);
+  //   }
+  // };
+
   async function convertUsdToWei(usdAmount) {
     try {
       const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
@@ -605,6 +649,7 @@ const SnakeGame = ({ user }) => {
   }
 
   const transferTokenToTreasury=async () => {
+    console.log("transfering token to treasury");
     const tokenToTransfer=Number(GAME_CONFIG.ENTRY_FEE)/87.62;
     var weiAmount=await convertUsdToWei(tokenToTransfer)
 
@@ -635,13 +680,14 @@ const SnakeGame = ({ user }) => {
 
       try {
         setIsLoading(true);
-        setLoadingMessage('Connecting to wallet...');
+        setLoadingMessage('Connecting to wallet for user '+user.name);
         
         // Use the tokenId from Google login
         const oktoUser = await oktoClient.loginUsingOAuth({
           idToken: user.tokenId,  // Google ID token
           provider: "google",
         });
+        
         
         console.log('Connecting wallet for user:', oktoUser.email);
         
@@ -721,7 +767,7 @@ const SnakeGame = ({ user }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>₹{portfolioBalance.toFixed(2)} INR</span>
                 <button 
-                  onClick={refreshPortfolio}
+                  onClick={transferUSDT}
                   style={{
                     background: 'none',
                     border: 'none',
