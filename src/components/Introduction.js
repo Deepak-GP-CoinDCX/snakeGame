@@ -10,7 +10,7 @@ const Introduction = () => {
         <div className="game-description">
           <p>
             Experience the classic Snake Game with a modern twist! Control your snake,
-            collect food, and try to achieve the highest score while avoiding collisions.
+            collect food, and win exciting reward points while avoiding collisions.
           </p>
         </div>
 
@@ -23,7 +23,7 @@ const Introduction = () => {
             </div>
             <div className="step">
               <div className="step-number">2</div>
-              <p>Collect food (shown as dots) to grow your snake and increase your score</p>
+              <p>Collect food (shown as dots) to grow your snake and earn reward points</p>
             </div>
             <div className="step">
               <div className="step-number">3</div>
@@ -31,7 +31,7 @@ const Introduction = () => {
             </div>
             <div className="step">
               <div className="step-number">4</div>
-              <p>Sign in to save your high scores and compete with other players!</p>
+              <p>Sign in to play the snake and win rewards points</p>
             </div>
           </div>
         </div>
@@ -40,9 +40,8 @@ const Introduction = () => {
           <h2>Features</h2>
           <ul>
             <li>Classic snake gameplay with smooth controls</li>
-            <li>Score tracking and leaderboards</li>
+            <li>Earn real rewards as you play</li>
             <li>Save your progress with Google Sign-in</li>
-            <li>Compete with players worldwide</li>
           </ul>
         </div>
       </div>
