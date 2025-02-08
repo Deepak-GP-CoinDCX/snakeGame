@@ -9,7 +9,7 @@ import { useGlobalOktoClient } from './context/OktoClientContext';
 import { ethers } from 'ethers';
 
 const GAME_CONFIG = {
-  DEV_MODE: false, // Set to false for okto web3 
+  DEV_MODE: true, // Set to false for okto web3 
   BOARD_WIDTH: 400,
   BOARD_HEIGHT: 400,
   GRID_SIZE: 20,
@@ -318,16 +318,20 @@ const SnakeGame = ({ user }) => {
 
   // Function to add a new score popup animation
   const addScorePopup = useCallback((x, y, points) => {
-    const id = Date.now();
     const element = document.createElement('div');
     element.className = 'score-popup';
-    element.textContent = `+${points}`;
-    element.style.left = `${x}px`;
-    element.style.top = `${y}px`;
-
+    element.textContent = points;
+    
+    // Position relative to game board
     const gameBoard = document.querySelector('.game-board');
     if (gameBoard) {
-      gameBoard.appendChild(element);
+      const boardRect = gameBoard.getBoundingClientRect();
+      element.style.left = `${x - 10}px`; // Offset to center
+      element.style.top = `${y - 20}px`; // Start a bit above the food
+      
+      // Add to game container instead of game board for proper z-index handling
+      document.querySelector('.game-container').appendChild(element);
+      
       setTimeout(() => {
         element.remove();
       }, GAME_CONFIG.ANIMATION_DURATION);
@@ -362,17 +366,14 @@ const SnakeGame = ({ user }) => {
       head.x += direction.x;
       head.y += direction.y;
 
+      // Check for collisions
       if (
         head.x < 0 ||
         head.x >= GAME_CONFIG.BOARD_WIDTH / GAME_CONFIG.GRID_SIZE ||
         head.y < 0 ||
-        head.y >= GAME_CONFIG.BOARD_HEIGHT / GAME_CONFIG.GRID_SIZE
+        head.y >= GAME_CONFIG.BOARD_HEIGHT / GAME_CONFIG.GRID_SIZE ||
+        newSnake.some(segment => segment.x === head.x && segment.y === head.y)
       ) {
-        gameOver();
-        return prevSnake;
-      }
-
-      if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
         gameOver();
         return prevSnake;
       }
@@ -380,20 +381,19 @@ const SnakeGame = ({ user }) => {
       newSnake.unshift(head);
 
       if (head.x === food.x && head.y === food.y) {
-        setScore(prevScore => {
-          const newScore = prevScore + GAME_CONFIG.FOOD_REWARD / 2;
-          return newScore;
-        });
+        setScore(prevScore => prevScore + GAME_CONFIG.FOOD_REWARD / 2);
         setFood(generateFood());
 
-        // Trigger animations
-        setPulseFrame(0);
-        const pixelX = head.x * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2;
-        const pixelY = head.y * GAME_CONFIG.GRID_SIZE;
-        addScorePopup(pixelX, pixelY, GAME_CONFIG.FOOD_REWARD);
+        // Calculate position for score popup relative to canvas
+        const pixelX = head.x * GAME_CONFIG.GRID_SIZE + canvasRef.current.offsetLeft;
+        const pixelY = head.y * GAME_CONFIG.GRID_SIZE + canvasRef.current.offsetTop;
+        
+        addScorePopup(pixelX, pixelY, '+10');
+        
+        // Add ripple effect
         addRippleEffect(pixelX, pixelY + GAME_CONFIG.GRID_SIZE / 2);
 
-        // Animate each segment of the snake with a delay
+        // Animate snake segments
         newSnake.forEach((_, index) => {
           setTimeout(() => {
             setAnimations(prev => [...prev, { index, time: Date.now() }]);
