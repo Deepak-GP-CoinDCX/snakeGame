@@ -6,7 +6,7 @@ const Introduction = () => {
     <div className="introduction-container">
       <div className="intro-content">
         <h1>Welcome to Snake Game!</h1>
-        
+
         <div className="game-description">
           <p>
             Experience the classic Snake Game with a modern twist! Control your snake,
