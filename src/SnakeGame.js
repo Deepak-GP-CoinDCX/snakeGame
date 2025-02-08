@@ -95,6 +95,7 @@ const SnakeGame = ({ user }) => {
   const [showOrderHistory, setShowOrderHistory] = useState(false);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [convertedAmounts, setConvertedAmounts] = useState([]);
+  const [selectedFilter, setSelectedFilter] = useState('all');
 
   // Web3 state
   const [walletAddress, setWalletAddress] = useState(null);
@@ -814,6 +815,29 @@ const SnakeGame = ({ user }) => {
     );
   }
 
+  const getOrderStatusClass = (status) => {
+    const statusLower = status?.toLowerCase();
+    if (statusLower === 'successful') return 'successful';
+    if (statusLower === 'initiated' || statusLower === 'in_progress') return 'in-progress';
+    if (statusLower === 'failed' || statusLower === 'bundler_discarded') return 'failed';
+    return '';
+  };
+
+  const getStatusIcon = (status) => {
+    const statusLower = status?.toLowerCase();
+    if (statusLower === 'successful') return '✓';
+    if (statusLower === 'failed' || statusLower === 'bundler_discarded') return '✕';
+    return '•';
+  };
+
+  const getDisplayStatus = (status) => {
+    const statusLower = status?.toLowerCase();
+    if (statusLower === 'initiated' || statusLower === 'in_progress') return 'In Progress';
+    if (statusLower === 'bundler_discarded' || statusLower === 'failed') return 'Failed';
+    if (statusLower === 'successful') return 'Successful';
+    return status || 'N/A';
+  };
+
   return (
     <div className="game-container">
       {gameStatus !== 'LOADING' && user?.email && (
@@ -829,27 +853,70 @@ const SnakeGame = ({ user }) => {
 
       {showOrderHistory && (
         <div className="order-history-dialog">
-          <div className="order-history-content">
-            <h3>Order History</h3>
+          <h3>Order History</h3>
+          <button
+            className="close-button"
+            onClick={() => setShowOrderHistory(false)}
+          >
+            ✕
+          </button>
+          <div className="filter-section">
             <button
-              className="close-button"
-              onClick={() => setShowOrderHistory(false)}
+              className={`filter-button ${selectedFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setSelectedFilter('all')}
             >
-              ✕
+              All
             </button>
-            <div className="orders-list">
-              {orders && orders.length > 0 ? (
-                orders.map((order, index) => (
+            <button
+              className={`filter-button ${selectedFilter === 'in_progress' ? 'active' : ''}`}
+              onClick={() => setSelectedFilter('in_progress')}
+            >
+              In Progress
+            </button>
+            <button
+              className={`filter-button ${selectedFilter === 'successful' ? 'active' : ''}`}
+              onClick={() => setSelectedFilter('successful')}
+            >
+              Successful
+            </button>
+            <button
+              className={`filter-button ${selectedFilter === 'failed' ? 'active' : ''}`}
+              onClick={() => setSelectedFilter('failed')}
+            >
+              Failed
+            </button>
+          </div>
+          <div className="orders-list">
+            {(() => {
+              const filteredOrders = orders.filter(order => {
+                if (selectedFilter === 'all') return true;
+                const status = order.status?.toLowerCase();
+                switch (selectedFilter) {
+                  case 'in_progress':
+                    return status === 'initiated' || status === 'in_progress';
+                  case 'successful':
+                    return status === 'successful';
+                  case 'failed':
+                    return status === 'failed' || status === 'bundler_discarded';
+                  default:
+                    return true;
+                }
+              });
+
+              return filteredOrders.length > 0 ? (
+                filteredOrders.map((order, index) => (
                   <div key={index} className="order-item">
-                    <div className="order-network">
-                      <span className="label">Network</span>
-                      <span className="value">{order.networkName || 'N/A'}</span>
-                    </div>
-                    <div className="order-status">
-                      <span className={`status-indicator ${order.status?.toLowerCase().replace('_', '-')}`}>
-                        {order.status?.toLowerCase() === 'successful' ? '✓' : '•'}
-                      </span>
-                      <span className="status-text">{order.status?.replace('_', ' ') || 'N/A'}</span>
+                    <div className="order-item-left">
+                      <div className="order-network">
+                        <span className="label">Network</span>
+                        <span className="value">{order.networkName || 'N/A'}</span>
+                      </div>
+                      <div className="order-status">
+                        <span className={`status-indicator ${getOrderStatusClass(order.status)}`}>
+                          {getStatusIcon(order.status)}
+                        </span>
+                        <span className="status-text">{getDisplayStatus(order.status)}</span>
+                      </div>
                     </div>
                     <div className="order-amount">
                       <span className="amount">₹{convertedAmounts[index]} INR</span>
@@ -857,9 +924,13 @@ const SnakeGame = ({ user }) => {
                   </div>
                 ))
               ) : (
-                <div className="no-orders">No orders found</div>
-              )}
-            </div>
+                <div className="no-orders">
+                  {selectedFilter === 'all' 
+                    ? 'No orders found'
+                    : `No ${selectedFilter.replace('_', ' ')} orders found`}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
