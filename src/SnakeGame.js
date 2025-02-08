@@ -825,9 +825,19 @@ const SnakeGame = ({ user }) => {
               {orders && orders.length > 0 ? (
                 orders.map((order, index) => (
                   <div key={index} className="order-item">
-                    <div>Network: {order.networkName || 'N/A'}</div>
-                    <div>Status: {order.status || 'N/A'}</div>
-                    <div>Amount: ₹{convertedAmounts[index]} INR</div>
+                    <div className="order-network">
+                      <span className="label">Network</span>
+                      <span className="value">{order.networkName || 'N/A'}</span>
+                    </div>
+                    <div className="order-status">
+                      <span className={`status-indicator ${order.status?.toLowerCase().replace('_', '-')}`}>
+                        {order.status?.toLowerCase() === 'successful' ? '✓' : '•'}
+                      </span>
+                      <span className="status-text">{order.status?.replace('_', ' ') || 'N/A'}</span>
+                    </div>
+                    <div className="order-amount">
+                      <span className="amount">₹{convertedAmounts[index]} INR</span>
+                    </div>
                   </div>
                 ))
               ) : (
