@@ -14,7 +14,7 @@ const GAME_CONFIG = {
   BOARD_HEIGHT: 400,
   GRID_SIZE: 20,
   INITIAL_SPEED: 150,
-  ENTRY_FEE: 1,
+  ENTRY_FEE: 2,
   BASE_THRESHOLD: 50,
   ANIMATION_DURATION: 800,
   HOUSE_WALLET: '0x1234567890123456789012345678901234567890',
@@ -197,7 +197,7 @@ const SnakeGame = ({ user }) => {
       } else if (error.reason === 'overflow') {
         throw new Error('Transfer amount is too large');
       }
-      throw error;
+      // throw error;
     }
   };
 
@@ -217,6 +217,8 @@ const SnakeGame = ({ user }) => {
         console.log('MATIC Reward transfer successful:', txHash);
   
         setLoadingMessage('Transfer successful! Updating balance...');
+        //wait for 10 seconds
+        await new Promise(resolve => setTimeout(resolve, 10000));
         await fetchPortfolio();
         setError(null);
       } catch (err) {
@@ -631,21 +633,24 @@ const SnakeGame = ({ user }) => {
   //   }
   // };
 
-  async function convertWeiToInr(weiAmount) {
+  async function convertWeiToMaticInInr(weiAmount, token) {
     try {
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr');
-      const data = await response.json();
-      const exchangeRate = data.ethereum.inr;
-
-      // Convert Wei to ETH (1 ETH = 10^18 Wei)
-      const ethAmount = weiAmount / 1e18;
-
-      // Convert ETH to INR
-      const inrAmount = ethAmount * exchangeRate;
-
+      // Get MATIC/INR rate from token data
+      const maticToInrRate = Number(token.holdingsPriceInr) / Number(token.balance);
+      
+      // Convert Wei to MATIC (1 MATIC = 10^18 Wei)
+      const maticAmount = ethers.utils.formatEther(weiAmount.toString());
+      
+      // Convert MATIC to INR using the rate
+      const inrAmount = Number(maticAmount) * maticToInrRate;
+  
+      console.log(`Converting ${weiAmount} Wei`);
+      console.log(`= ${maticAmount} MATIC`);
+      console.log(`= ₹${inrAmount.toFixed(2)} INR (Rate: ₹${maticToInrRate.toFixed(2)}/MATIC)`);
+      
       return inrAmount.toFixed(2);
     } catch (error) {
-      console.error('Error fetching exchange rate:', error);
+      console.error('Error converting Wei to INR:', error);
       return '0.00';
     }
   }
@@ -721,10 +726,10 @@ const SnakeGame = ({ user }) => {
       // Extract items from the response data
       const orderHistory = response || [];
       console.log('Processed Order History:', orderHistory);
-
+      const token=await fetchPortfolio();
       // Convert amounts
       const amounts = await Promise.all(orderHistory.map(async (order) => {
-        const amountInInr = order.details?.amount ? await convertWeiToInr(order.details.amount) : '0.00';
+        const amountInInr = order.details?.amount ? await convertWeiToMaticInInr(order.details.amount,token) : '0.00';
         return amountInInr;
       }));
 
