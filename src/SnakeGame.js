@@ -9,7 +9,7 @@ import { useGlobalOktoClient } from './context/OktoClientContext';
 import { ethers } from 'ethers';
 
 const GAME_CONFIG = {
-  DEV_MODE: true, // Set to false for okto web3 
+  DEV_MODE: false, // Set to false for okto web3 
   BOARD_WIDTH: 400,
   BOARD_HEIGHT: 400,
   GRID_SIZE: 20,
