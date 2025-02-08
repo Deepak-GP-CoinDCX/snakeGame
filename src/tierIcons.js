@@ -3,6 +3,6 @@ export const TIER_ICONS = {
   'Noob': '🥚',      // Egg for beginners
   'Ape': '🦍',       // Ape
   'Hodler': '💎',    // Diamond for holders
-  'Diamond Hands': '🙌💎', // Diamond hands
+  'Moon Lander': '👨‍🚀', // Astronaut for moon landers
   'Satoshi': '₿',    // Bitcoin symbol
 };
