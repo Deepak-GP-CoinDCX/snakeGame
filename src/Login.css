@@ -1,35 +1,70 @@
 .login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
-  background-color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.login-header {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  background: none;
+  box-shadow: none;
+}
+
+.login-header h1 {
+  color: #4CAF50;
+  font-size: 2rem;
+  margin: 0;
+  text-shadow: none;
+}
+
+.login-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .login-card {
-  background-color: #333;
   padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
   text-align: center;
-  color: white;
-  min-width: 300px;
+  color: black;
+  box-shadow: none;
+  margin-bottom: 2rem;
 }
 
 .login-card h1 {
+  color: #4CAF50;
+  font-size: 2.5rem;
   margin-bottom: 1rem;
-  font-size: 2rem;
+  text-shadow: none;
 }
 
 .login-card p {
-  margin-bottom: 2rem;
-  color: #ccc;
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  color: black;
 }
 
 .google-button-container {
   display: flex;
-  justify-content: center;
-  margin-top: 1rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+.google-button-container > div {
+  width: auto !important;
 }
 
 .google-signin-button {
@@ -55,4 +90,23 @@
   width: 20px;
   height: 20px;
   margin-right: 10px;
+}
+
+@media (max-width: 768px) {
+  .login-header {
+    right: 0.25rem;
+    top: 0.25rem;
+  }
+  
+  .login-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .login-content {
+    padding: 0.25rem;
+  }
+  
+  .login-card h1 {
+    font-size: 2rem;
+  }
 }
