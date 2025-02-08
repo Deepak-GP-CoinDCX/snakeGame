@@ -136,29 +136,29 @@ const SnakeGame = ({ user }) => {
       const tokenBalance = await fetchPortfolio();
       const maticRateInInr = Number(tokenBalance.holdingsPriceInr) / Number(tokenBalance.balance);
       const maticAmount = inrAmount / maticRateInInr;
-      
+
       const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
       const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
-  
+
       // Convert MATIC to Wei using ethers.utils directly
       const amountInWei = ethers.utils.parseEther(maticAmount.toFixed(18));
-  
+
       // Get gas price
       const gasPrice = await provider.getGasPrice();
       const adjustedGasPrice = gasPrice.mul(130).div(100); // Add 30% buffer
-  
+
       // Standard gas limit for native transfers
       const gasLimit = ethers.BigNumber.from(21000);
-  
+
       // Calculate total gas cost using BigNumber operations
       const totalGasCost = adjustedGasPrice.mul(gasLimit);
-      
+
       // Get current balance
       const balance = await provider.getBalance(wallet.address);
-      
+
       // Calculate total needed using BigNumber operations
       const totalNeeded = amountInWei.add(totalGasCost);
-  
+
       setLoadingMessage(
         `Checking balance...\n` +
         `Transfer Amount: ${ethers.utils.formatEther(amountInWei)} MATIC\n` +
@@ -166,15 +166,15 @@ const SnakeGame = ({ user }) => {
         `Total Needed: ${ethers.utils.formatEther(totalNeeded)} MATIC\n` +
         `Balance: ${ethers.utils.formatEther(balance)} MATIC`
       );
-      
-     
-      
+
+
+
       if (balance.lt(totalNeeded)) {
         throw new Error(`Insufficient MATIC balance. Need ${ethers.utils.formatEther(totalNeeded)} MATIC`);
       }
-  
+
       setLoadingMessage('Sending MATIC transaction...');
-  
+
       // Send transaction
       const tx = await wallet.sendTransaction({
         to: recipientAddress,
@@ -182,11 +182,11 @@ const SnakeGame = ({ user }) => {
         gasPrice: adjustedGasPrice,
         gasLimit: gasLimit
       });
-  
+
       const receipt = await tx.wait();
       console.log('Transaction successful:', receipt);
       setLoadingMessage('Transfer successful!');
-      
+
       return receipt.transactionHash;
     } catch (error) {
       console.error('MATIC transfer error:', error);
@@ -205,17 +205,17 @@ const SnakeGame = ({ user }) => {
     clearInterval(gameLoopRef.current);
     clearInterval(timeIntervalRef.current);
     setGameStatus('ENDED');
-    
+
     const finalReward = calculateReward(); // Calculate final reward in INR
-  
+
     if (finalReward > 0 && !GAME_CONFIG.DEV_MODE) {
       try {
         setLoadingMessage('Processing reward transfer of ' + finalReward + ' INR...');
         setIsLoading(true);
-  
+
         const txHash = await transferMatic(walletAddress, finalReward);
         console.log('MATIC Reward transfer successful:', txHash);
-  
+
         setLoadingMessage('Transfer successful! Updating balance...');
         await fetchPortfolio();
         setError(null);
@@ -233,18 +233,18 @@ const SnakeGame = ({ user }) => {
       setLoadingMessage('Processing entry fee of ' + GAME_CONFIG.ENTRY_FEE + ' INR');
       setIsLoading(true);
       // Update portfolio balance
-      const token=await fetchPortfolio();
+      const token = await fetchPortfolio();
 
       // Transfer entry fee to house wallet
       if (!GAME_CONFIG.DEV_MODE) {
-      const status=await transferTokenToTreasury(token);
-      if(status==="FAILED"){
-        setError('Failed to process entry fee');
-        return;
+        const status = await transferTokenToTreasury(token);
+        if (status === "FAILED") {
+          setError('Failed to process entry fee');
+          return;
+        }
+        // Update portfolio balance
+        await fetchPortfolio();
       }
-      // Update portfolio balance
-      await fetchPortfolio();
-    }
 
 
       // Reset game state with initial snake of length 3
@@ -378,7 +378,7 @@ const SnakeGame = ({ user }) => {
 
       if (head.x === food.x && head.y === food.y) {
         setScore(prevScore => {
-          const newScore = prevScore + GAME_CONFIG.FOOD_REWARD/2;
+          const newScore = prevScore + GAME_CONFIG.FOOD_REWARD / 2;
           return newScore;
         });
         setFood(generateFood());
@@ -566,7 +566,7 @@ const SnakeGame = ({ user }) => {
 
 
   const fetchPortfolio = async () => {
-        try {
+    try {
       const portfolio = await getPortfolio(oktoClient);
       if (!portfolio.groupTokens) {
         setPortfolioBalance(0);
@@ -631,17 +631,18 @@ const SnakeGame = ({ user }) => {
   //   }
   // };
 
-  async function convertWeiToInr(weiAmount) {
+  async function convertWeiToInr(weiAmount, token) {
     try {
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr');
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=inr');
       const data = await response.json();
-      const exchangeRate = data.ethereum.inr;
+      const exchangeRate = data['matic-network'].inr;
 
-      // Convert Wei to ETH (1 ETH = 10^18 Wei)
-      const ethAmount = weiAmount / 1e18;
 
-      // Convert ETH to INR
-      const inrAmount = ethAmount * exchangeRate;
+      // Convert Wei to MATIC (1 MATIC = 10^18 Wei)
+      const maticAmount = weiAmount / 1e18;
+
+      // Convert MATIC to INR
+      const inrAmount = maticAmount * exchangeRate;
 
       return inrAmount.toFixed(2);
     } catch (error) {
@@ -662,9 +663,9 @@ const SnakeGame = ({ user }) => {
 
   async function transferTokenToTreasury(token) {
     console.log("transfering token to treasury");
-    const maticRateInInr=Number(token.holdingsPriceInr)/Number(token.balance);
+    const maticRateInInr = Number(token.holdingsPriceInr) / Number(token.balance);
     console.log("maticRateInInr in inr", maticRateInInr);
-    const maticAmount=GAME_CONFIG.ENTRY_FEE/maticRateInInr;
+    const maticAmount = GAME_CONFIG.ENTRY_FEE / maticRateInInr;
     console.log("tokenToTransfer in matic", maticAmount);
     const weiAmount = await convertMaticToWei(maticAmount);
 
@@ -672,7 +673,7 @@ const SnakeGame = ({ user }) => {
       amount: Number(weiAmount), // Convert BigNumber to string
       recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
       chain: "eip155:137",
-      token:""
+      token: ""
     };
     const userOp = await tokenTransfer(oktoClient, transferParams);
     console.log(userOp);
@@ -681,34 +682,34 @@ const SnakeGame = ({ user }) => {
     const tx = await oktoClient.executeUserOp(signedUserOp);
     console.log("txHash", tx);
     //keep looping until the tx is confirmed
-    var isTxnConfirmed=false;
-    var status="";
+    var isTxnConfirmed = false;
+    var status = "";
     return "SUCCESSFUL";
-    while(!isTxnConfirmed){
-      const orderHistory=await getOrdersHistory(oktoClient);
-    //loop orderHistory and search for the order
-    for(let i=0;i<orderHistory.length;i++){
-      if(orderHistory[i].intentId===tx.jobId){
-        console.log("order found", orderHistory[i]);
-        if(orderHistory[i].status==="SUCCESSFUL"){
-          isTxnConfirmed=true;
-          status="SUCCESSFUL";
-          break;
+    while (!isTxnConfirmed) {
+      const orderHistory = await getOrdersHistory(oktoClient);
+      //loop orderHistory and search for the order
+      for (let i = 0; i < orderHistory.length; i++) {
+        if (orderHistory[i].intentId === tx.jobId) {
+          console.log("order found", orderHistory[i]);
+          if (orderHistory[i].status === "SUCCESSFUL") {
+            isTxnConfirmed = true;
+            status = "SUCCESSFUL";
+            break;
+          }
+          if (orderHistory[i].status === "FAILED") {
+            isTxnConfirmed = true;
+            status = "FAILED";
+            break;
+          }
         }
-        if(orderHistory[i].status==="FAILED"){
-          isTxnConfirmed=true;
-          status="FAILED";
-          break;
-        }
+
       }
-      
-    }
-    // add delay of 5 seconds
-    await new Promise(resolve => setTimeout(resolve, 5000));
+      // add delay of 5 seconds
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
     return status;
-    
-    
+
+
   }
 
   const fetchOrderHistory = async () => {
