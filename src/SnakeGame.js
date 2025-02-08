@@ -126,103 +126,73 @@ const SnakeGame = ({ user }) => {
       default: return '';
     }
   };
-  // const transferTokensWithPrivateKey = async (recipientAddress, amount) => {
-  //   try {
-  //     amount=0.1;
-  //     recipientAddress=walletAddress;
-  //     console.log("amount",amount);
-  //     const portfolio=await fetchPortfolio();
-  //     const usdRate=Number(portfolio.aggregatedData.totalHoldingPriceInr)/Number(portfolio.aggregatedData.totalHoldingPriceUsdt);
-  //     console.log("usdRate",usdRate);
-  //     const finalRewardInUsd=amount/usdRate;
-  //     console.log("finalRewardInUsd",finalRewardInUsd);
-  //     const rewardInWei = await convertUsdToWei(finalRewardInUsd);
-  //     const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
-  //     const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
-      
-  //     const tx = {
-  //       to: recipientAddress,
-  //       value: rewardInWei
-  //     };
-  
-  //     const transaction = await wallet.sendTransaction(tx);
-  //     await transaction.wait();
-  //     console.log('Transfer successful:', transaction.hash);
-  //     return transaction.hash;
-  //   } catch (error) {
-  //     console.error('Transfer error:', error);
-  //     throw error;
-  //   }
-  // };
 
-  const transferUSDT = async (recipientAddress, inrAmount) => {
+  const transferMatic = async (recipientAddress, inrAmount) => {
     try {
       setIsLoading(true);
-      const tokenBalance=await fetchPortfolio();
-      const usdtRate=Number(tokenBalance.holdingsPriceInr)/Number(tokenBalance.holdingsPriceUsdt);
-      const usdtAmount=inrAmount/usdtRate;
-      recipientAddress="0x4358CC177AdF75A9f4Db0F54dEbb4F0D67A8c84A";
+      const tokenBalance = await fetchPortfolio();
+      const maticRateInInr = Number(tokenBalance.holdingsPriceInr) / Number(tokenBalance.balance);
+      const maticAmount = inrAmount / maticRateInInr;
+      
       const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
       const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
-
-      const usdtContract = new ethers.Contract(USDT_ADDRESS, ERC20_ABI, wallet);
-      const decimals = await usdtContract.decimals();
-      const amountInSmallestUnit = ethers.utils.parseUnits(usdtAmount.toString(), decimals);
-
-      // Check USDT balance
-      const balance = await usdtContract.balanceOf(wallet.address);
-      setLoadingMessage('USDT balance: '+ ethers.utils.formatUnits(balance, decimals));
-      if (balance.lt(amountInSmallestUnit)) {
-        throw new Error('Insufficient USDT balance');
-      }
-
-      // Get gas price and estimate gas
+  
+      // Convert MATIC to Wei using ethers.utils directly
+      const amountInWei = ethers.utils.parseEther(maticAmount.toFixed(18));
+  
+      // Get gas price
       const gasPrice = await provider.getGasPrice();
-      const gasLimit = await usdtContract.estimateGas.transfer(recipientAddress, amountInSmallestUnit);
-
-      // Add 30% buffer to gas price and limit for safety
-      const adjustedGasPrice = gasPrice.mul(130).div(100);
-      const adjustedGasLimit = gasLimit.mul(130).div(100);
-
-      // Calculate total gas cost in MATIC
-      const totalGasCost = adjustedGasPrice.mul(adjustedGasLimit);
-      console.log('Gas needed (MATIC):', ethers.utils.formatEther(totalGasCost));
+      const adjustedGasPrice = gasPrice.mul(130).div(100); // Add 30% buffer
+  
+      // Standard gas limit for native transfers
+      const gasLimit = ethers.BigNumber.from(21000);
+  
+      // Calculate total gas cost using BigNumber operations
+      const totalGasCost = adjustedGasPrice.mul(gasLimit);
       
-      // Check MATIC balance
-      const maticBalance = await provider.getBalance(wallet.address);
-      setLoadingMessage(`Gas needed (MATIC): ${ethers.utils.formatEther(totalGasCost)}\nMATIC balance: ${ethers.utils.formatEther(maticBalance)}`);
-      console.log('MATIC balance:', ethers.utils.formatEther(maticBalance));
-      //add 1 second delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      if (maticBalance.lt(totalGasCost)) {
-        const neededMatic = ethers.utils.formatEther(totalGasCost);
-        throw new Error(`Insufficient MATIC for gas. Need ${neededMatic} MATIC`);
+      // Get current balance
+      const balance = await provider.getBalance(wallet.address);
+      
+      // Calculate total needed using BigNumber operations
+      const totalNeeded = amountInWei.add(totalGasCost);
+  
+      setLoadingMessage(
+        `Checking balance...\n` +
+        `Transfer Amount: ${ethers.utils.formatEther(amountInWei)} MATIC\n` +
+        `Gas Cost: ${ethers.utils.formatEther(totalGasCost)} MATIC\n` +
+        `Total Needed: ${ethers.utils.formatEther(totalNeeded)} MATIC\n` +
+        `Balance: ${ethers.utils.formatEther(balance)} MATIC`
+      );
+      
+     
+      
+      if (balance.lt(totalNeeded)) {
+        throw new Error(`Insufficient MATIC balance. Need ${ethers.utils.formatEther(totalNeeded)} MATIC`);
       }
-      setLoadingMessage('Sending USDT transaction...');
-
-      // Send transaction with explicit gas settings
-      const tx = await usdtContract.transfer(recipientAddress, amountInSmallestUnit, {
+  
+      setLoadingMessage('Sending MATIC transaction...');
+  
+      // Send transaction
+      const tx = await wallet.sendTransaction({
+        to: recipientAddress,
+        value: amountInWei,
         gasPrice: adjustedGasPrice,
-        gasLimit: adjustedGasLimit
+        gasLimit: gasLimit
       });
-
+  
       const receipt = await tx.wait();
-      console.log('USDT transfer successful:', receipt.transactionHash);
-
-      console.log('Gas used:', receipt.gasUsed.toString());
-      console.log('Gas price:', ethers.utils.formatUnits(receipt.effectiveGasPrice, 'gwei'), 'gwei');
-      console.log('Total gas cost:', ethers.utils.formatEther(receipt.gasUsed.mul(receipt.effectiveGasPrice)), 'MATIC');
-
+      console.log('Transaction successful:', receipt);
+      setLoadingMessage('Transfer successful!');
+      
       return receipt.transactionHash;
     } catch (error) {
-      console.error('USDT transfer error:', error);
-      // Enhance error messages
+      console.error('MATIC transfer error:', error);
       if (error.message.includes('insufficient funds')) {
-        throw new Error('Insufficient MATIC for gas fees. Please add more MATIC to your wallet.');
-      } else if (error.code === 'UNPREDICTABLE_GAS_LIMIT') {
-        throw new Error('Unable to estimate gas. The transaction might fail.');
+        throw new Error('Insufficient MATIC balance for transfer and gas fees');
       } else if (error.code === 'NETWORK_ERROR') {
         throw new Error('Network error. Please try again or check your connection.');
+      } else if (error.reason === 'overflow') {
+        throw new Error('Transfer amount is too large');
       }
       throw error;
     }
@@ -233,23 +203,22 @@ const SnakeGame = ({ user }) => {
     clearInterval(timeIntervalRef.current);
     setGameStatus('ENDED');
     
-    const finalReward = calculateReward();
-    const finalRewardUSDT = rewardToUsdt(finalReward);
-
-    if (finalRewardUSDT > 0) {
+    const finalReward = calculateReward(); // Calculate final reward in INR
+  
+    if (finalReward > 0) {
       try {
-        setLoadingMessage('Calculating gas fees...');
+        setLoadingMessage('Processing reward transfer of ' + finalReward + ' INR...');
         setIsLoading(true);
-
-        const txHash = await transferUSDT(walletAddress, finalRewardUSDT);
-        console.log('USDT Reward transfer successful:', txHash);
-
+  
+        const txHash = await transferMatic(walletAddress, finalReward);
+        console.log('MATIC Reward transfer successful:', txHash);
+  
         setLoadingMessage('Transfer successful! Updating balance...');
         await fetchPortfolio();
         setError(null);
       } catch (err) {
         console.error('Transfer error:', err);
-        setError(err.message || 'Failed to process USDT reward');
+        setError(err.message || 'Failed to process MATIC reward');
       } finally {
         setIsLoading(false);
       }
@@ -258,14 +227,20 @@ const SnakeGame = ({ user }) => {
 
   const startGame = async () => {
     try {
-      setLoadingMessage('Processing entry fee...');
+      setLoadingMessage('Processing entry fee of ' + GAME_CONFIG.ENTRY_FEE + ' INR');
       setIsLoading(true);
+      // Update portfolio balance
+      const token=await fetchPortfolio();
 
       // Transfer entry fee to house wallet
-      await transferTokenToTreasury();
-
+      const status=await transferTokenToTreasury(token);
+      if(status==="FAILED"){
+        setError('Failed to process entry fee');
+        return;
+      }
       // Update portfolio balance
       await fetchPortfolio();
+
 
       // Reset game state with initial snake of length 3
       const initialSnake = [
@@ -598,9 +573,9 @@ const SnakeGame = ({ user }) => {
 
       // Find USDT token on Polygon network
       for (const group of portfolio.groupTokens) {
-        if (group.networkName === 'POLYGON') {
+        if (group.shortName === 'POL') {
           for (const token of group.tokens) {
-            if (token.shortName === "USDT") {
+            if (token.shortName === "POL") {
               setPortfolioBalance(Number(token.holdingsPriceInr));
               console.log('Found USDT token:', token);
               return token;
@@ -639,16 +614,16 @@ const SnakeGame = ({ user }) => {
   //     console.error('Error fetching portfolio:', error);
   //   }
   // };
-  const refreshPortfolio = async () => {
-    try {
-      const portfolio = await getPortfolio(oktoClient);
-      if (portfolio.aggregatedData.totalHoldingPriceInr !== "") {
-        setPortfolioBalance(Number(portfolio.aggregatedData.totalHoldingPriceInr));
-      }
-    } catch (error) {
-      console.error('Error fetching portfolio:', error);
-    }
-  };
+  // const refreshPortfolio = async () => {
+  //   try {
+  //     const portfolio = await getPortfolio(oktoClient);
+  //     if (portfolio.aggregatedData.totalHoldingPriceInr !== "") {
+  //       setPortfolioBalance(Number(portfolio.aggregatedData.totalHoldingPriceInr));
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching portfolio:', error);
+  //   }
+  // };
 
   async function convertWeiToInr(weiAmount) {
     try {
@@ -669,42 +644,65 @@ const SnakeGame = ({ user }) => {
     }
   }
 
-  async function convertUsdToWei(usdAmount) {
+  async function convertMaticToWei(maticAmount) {
     try {
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
-      const data = await response.json();
-      const exchangeRate = data.ethereum.usd;
-
-      // Convert USD to ETH
-      const ethAmount = usdAmount / exchangeRate;
-
-      // Convert ETH to Wei (1 ETH = 10^18 Wei)
-      const weiAmount = ethAmount * 1e18;
-      const weiBigInt = Number(Math.floor(weiAmount).toString());
-
-      console.log(`${usdAmount} USD is approximately ${weiAmount} Wei`);
-      return weiBigInt;
+      // Use ethers.utils.parseEther which returns a BigNumber
+      return ethers.utils.parseEther(maticAmount.toString());
     } catch (error) {
-      console.error('Error fetching exchange rate:', error);
+      console.error('Error converting MATIC to Wei:', error);
+      throw error;
     }
   }
 
-  const transferTokenToTreasury=async () => {
+  async function transferTokenToTreasury(token) {
     console.log("transfering token to treasury");
-    const tokenToTransfer=Number(GAME_CONFIG.ENTRY_FEE)/87.62;
-    var weiAmount=await convertUsdToWei(tokenToTransfer)
+    const maticRateInInr=Number(token.holdingsPriceInr)/Number(token.balance);
+    console.log("maticRateInInr in inr", maticRateInInr);
+    const maticAmount=GAME_CONFIG.ENTRY_FEE/maticRateInInr;
+    console.log("tokenToTransfer in matic", maticAmount);
+    const weiAmount = await convertMaticToWei(maticAmount);
 
     const transferParams = {
-      amount: weiAmount,
+      amount: Number(weiAmount), // Convert BigNumber to string
       recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
       chain: "eip155:137",
+      token:""
     };
     const userOp = await tokenTransfer(oktoClient, transferParams);
     console.log(userOp);
     const signedUserOp = await oktoClient.signUserOp(userOp);
     console.log(signedUserOp);
     const tx = await oktoClient.executeUserOp(signedUserOp);
-    console.log("txHash" - tx);
+    console.log("txHash", tx);
+    //keep looping until the tx is confirmed
+    var isTxnConfirmed=false;
+    var status="";
+    return "SUCCESSFUL";
+    while(!isTxnConfirmed){
+      const orderHistory=await getOrdersHistory(oktoClient);
+    //loop orderHistory and search for the order
+    for(let i=0;i<orderHistory.length;i++){
+      if(orderHistory[i].intentId===tx.jobId){
+        console.log("order found", orderHistory[i]);
+        if(orderHistory[i].status==="SUCCESSFUL"){
+          isTxnConfirmed=true;
+          status="SUCCESSFUL";
+          break;
+        }
+        if(orderHistory[i].status==="FAILED"){
+          isTxnConfirmed=true;
+          status="FAILED";
+          break;
+        }
+      }
+      
+    }
+    // add delay of 5 seconds
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+    return status;
+    
+    
   }
 
   const fetchOrderHistory = async () => {
@@ -881,7 +879,7 @@ const SnakeGame = ({ user }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>₹{portfolioBalance.toFixed(2)} INR</span>
                 <button
-                  onClick={refreshPortfolio}
+                  onClick={fetchPortfolio}
                   style={{
                     background: 'none',
                     border: 'none',
