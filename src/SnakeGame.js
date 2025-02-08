@@ -988,7 +988,7 @@ const SnakeGame = ({ user }) => {
                 disabled={isLoading || portfolioBalance < GAME_CONFIG.ENTRY_FEE}
                 className="play-button"
               >
-                Play Game ({GAME_CONFIG.ENTRY_FEE} tokens)
+                Play Game ({GAME_CONFIG.ENTRY_FEE} INR + Gass Fee)
               </button>
             )}
             {gameStatus === 'ENDED' && (
@@ -997,7 +997,7 @@ const SnakeGame = ({ user }) => {
                 disabled={isLoading || portfolioBalance < GAME_CONFIG.ENTRY_FEE}
                 className="play-button"
               >
-                Play Again ({GAME_CONFIG.ENTRY_FEE} tokens)
+                Play Again ({GAME_CONFIG.ENTRY_FEE} INR + Gass Fee))
               </button>
             )}
           </div>
