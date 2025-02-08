@@ -44,7 +44,7 @@ const Introduction = () => {
               <span className="tier-icon">{TIER_ICONS['Noob']}</span>
               <h3>Noob</h3>
               <p>0-50 points</p>
-              <p>No multiplier</p>
+              <p>No rewards</p>
             </div>
             <div className="tier-card">
               <span className="tier-icon">{TIER_ICONS['Ape']}</span>
@@ -59,8 +59,8 @@ const Introduction = () => {
               <p>20% bonus rewards</p>
             </div>
             <div className="tier-card">
-              <span className="tier-icon">{TIER_ICONS['Diamond Hands']}</span>
-              <h3>Diamond Hands</h3>
+              <span className="tier-icon">{TIER_ICONS['Moon Lander']}</span>
+              <h3>Moon Lander</h3>
               <p>150-200 points</p>
               <p>30% bonus rewards</p>
             </div>
@@ -83,15 +83,6 @@ const Introduction = () => {
             <li>Each food collected adds 10 points to your score</li>
           </ul>
         </div>
-
-        {/* <div className="game-features">
-          <h2>Features</h2>
-          <ul>
-            <li>Classic snake gameplay with smooth controls</li>
-            <li>Earn real rewards as you play</li>
-            <li>Save your progress with Google Sign-in</li>
-          </ul>
-        </div> */}
       </div>
     </div>
   );

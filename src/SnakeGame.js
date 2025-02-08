@@ -22,38 +22,38 @@ const GAME_CONFIG = {
 };
 
 const TIERS = [
-  {
-    name: 'Noob',
-    minScore: 0,
-    maxScore: 50,
+  { 
+    name: 'Noob', 
+    minScore: 0, 
+    maxScore: 50, 
     multiplier: 0,
     speedMultiplier: 1
   },
-  {
-    name: 'Ape',
-    minScore: 50,
-    maxScore: 100,
+  { 
+    name: 'Ape', 
+    minScore: 50, 
+    maxScore: 100, 
     multiplier: 0.1,
     speedMultiplier: 0.85
   },
-  {
-    name: 'Hodler',
-    minScore: 100,
-    maxScore: 150,
+  { 
+    name: 'Hodler', 
+    minScore: 100, 
+    maxScore: 150, 
     multiplier: 0.2,
     speedMultiplier: 0.7
   },
-  {
-    name: 'Diamond Hands',
-    minScore: 150,
-    maxScore: 200,
+  { 
+    name: 'Moon Lander', // Changed from Diamond Hands
+    minScore: 150, 
+    maxScore: 200, 
     multiplier: 0.3,
     speedMultiplier: 0.6
   },
-  {
-    name: 'Satoshi',
-    minScore: 200,
-    maxScore: Infinity,
+  { 
+    name: 'Satoshi', 
+    minScore: 200, 
+    maxScore: Infinity, 
     multiplier: 0.4,
     speedMultiplier: 0.5
   }

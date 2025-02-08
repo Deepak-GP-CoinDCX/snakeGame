@@ -105,6 +105,7 @@
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
   margin: 1rem 0;
+  min-width: min-content; /* Ensure all cards are shown */
 }
 
 .tier-card {
@@ -193,7 +194,7 @@
   }
 
   .tiers-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(5, 200px); /* Maintain single row */
   }
 
   .tier-card:hover {
@@ -207,6 +208,6 @@
 
 @media (max-width: 480px) {
   .tiers-grid {
-    grid-template-columns: 1fr;
+    padding-bottom: 1rem; /* Add space for scrollbar */
   }
 }
