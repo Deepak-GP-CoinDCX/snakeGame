@@ -21,38 +21,38 @@ const GAME_CONFIG = {
 };
 
 const TIERS = [
-  { 
-    name: 'Noob', 
-    minScore: 0, 
-    maxScore: 50, 
+  {
+    name: 'Noob',
+    minScore: 0,
+    maxScore: 50,
     multiplier: 0,
     speedMultiplier: 1
   },
-  { 
-    name: 'Ape', 
-    minScore: 50, 
-    maxScore: 100, 
+  {
+    name: 'Ape',
+    minScore: 50,
+    maxScore: 100,
     multiplier: 0.1,
     speedMultiplier: 0.85
   },
-  { 
-    name: 'Hodler', 
-    minScore: 100, 
-    maxScore: 150, 
+  {
+    name: 'Hodler',
+    minScore: 100,
+    maxScore: 150,
     multiplier: 0.2,
     speedMultiplier: 0.7
   },
-  { 
-    name: 'Diamond Hands', 
-    minScore: 150, 
-    maxScore: 200, 
+  {
+    name: 'Diamond Hands',
+    minScore: 150,
+    maxScore: 200,
     multiplier: 0.3,
     speedMultiplier: 0.6
   },
-  { 
-    name: 'Satoshi', 
-    minScore: 200, 
-    maxScore: Infinity, 
+  {
+    name: 'Satoshi',
+    minScore: 200,
+    maxScore: Infinity,
     multiplier: 0.4,
     speedMultiplier: 0.5
   }
@@ -92,6 +92,7 @@ const SnakeGame = ({ user }) => {
   const [orders, setOrders] = useState([]);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
+  const [convertedAmounts, setConvertedAmounts] = useState([]);
 
   // Web3 state
   const [walletAddress, setWalletAddress] = useState(null);
@@ -139,12 +140,12 @@ const SnakeGame = ({ user }) => {
   //     const rewardInWei = await convertUsdToWei(finalRewardInUsd);
   //     const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
   //     const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
-      
+
   //     const tx = {
   //       to: recipientAddress,
   //       value: rewardInWei
   //     };
-  
+
   //     const transaction = await wallet.sendTransaction(tx);
   //     await transaction.wait();
   //     console.log('Transfer successful:', transaction.hash);
@@ -158,10 +159,10 @@ const SnakeGame = ({ user }) => {
   const transferUSDT = async (recipientAddress, inrAmount) => {
     try {
       setIsLoading(true);
-      const tokenBalance=await fetchPortfolio();
-      const usdtRate=Number(tokenBalance.holdingsPriceInr)/Number(tokenBalance.holdingsPriceUsdt);
-      const usdtAmount=inrAmount/usdtRate;
-      recipientAddress="0x4358CC177AdF75A9f4Db0F54dEbb4F0D67A8c84A";
+      const tokenBalance = await fetchPortfolio();
+      const usdtRate = Number(tokenBalance.holdingsPriceInr) / Number(tokenBalance.holdingsPriceUsdt);
+      const usdtAmount = inrAmount / usdtRate;
+      recipientAddress = "0x4358CC177AdF75A9f4Db0F54dEbb4F0D67A8c84A";
       const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
       const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
 
@@ -171,7 +172,7 @@ const SnakeGame = ({ user }) => {
 
       // Check USDT balance
       const balance = await usdtContract.balanceOf(wallet.address);
-      setLoadingMessage('USDT balance: '+ ethers.utils.formatUnits(balance, decimals));
+      setLoadingMessage('USDT balance: ' + ethers.utils.formatUnits(balance, decimals));
       if (balance.lt(amountInSmallestUnit)) {
         throw new Error('Insufficient USDT balance');
       }
@@ -187,7 +188,7 @@ const SnakeGame = ({ user }) => {
       // Calculate total gas cost in MATIC
       const totalGasCost = adjustedGasPrice.mul(adjustedGasLimit);
       console.log('Gas needed (MATIC):', ethers.utils.formatEther(totalGasCost));
-      
+
       // Check MATIC balance
       const maticBalance = await provider.getBalance(wallet.address);
       setLoadingMessage(`Gas needed (MATIC): ${ethers.utils.formatEther(totalGasCost)}\nMATIC balance: ${ethers.utils.formatEther(maticBalance)}`);
@@ -232,7 +233,7 @@ const SnakeGame = ({ user }) => {
     clearInterval(gameLoopRef.current);
     clearInterval(timeIntervalRef.current);
     setGameStatus('ENDED');
-    
+
     const finalReward = calculateReward();
     const finalRewardUSDT = rewardToUsdt(finalReward);
 
@@ -689,10 +690,10 @@ const SnakeGame = ({ user }) => {
     }
   }
 
-  const transferTokenToTreasury=async () => {
+  const transferTokenToTreasury = async () => {
     console.log("transfering token to treasury");
-    const tokenToTransfer=Number(GAME_CONFIG.ENTRY_FEE)/87.62;
-    var weiAmount=await convertUsdToWei(tokenToTransfer)
+    const tokenToTransfer = Number(GAME_CONFIG.ENTRY_FEE) / 87.62;
+    var weiAmount = await convertUsdToWei(tokenToTransfer)
 
     const transferParams = {
       amount: weiAmount,
@@ -715,10 +716,17 @@ const SnakeGame = ({ user }) => {
       console.log('Order History Response:', response);
 
       // Extract items from the response data
-      const orderHistory = response?.data?.items || [];
+      const orderHistory = response || [];
       console.log('Processed Order History:', orderHistory);
 
+      // Convert amounts
+      const amounts = await Promise.all(orderHistory.map(async (order) => {
+        const amountInInr = order.details?.amount ? await convertWeiToInr(order.details.amount) : '0.00';
+        return amountInInr;
+      }));
+
       setOrders(orderHistory);
+      setConvertedAmounts(amounts);
       setShowOrderHistory(true);
     } catch (error) {
       console.error('Error fetching order history:', error);
@@ -746,15 +754,15 @@ const SnakeGame = ({ user }) => {
     const initializeWeb3 = async () => {
       try {
         setIsLoading(true);
-        setLoadingMessage('Connecting to wallet for user '+user.name);
-        
+        setLoadingMessage('Connecting to wallet for user ' + user.name);
+
         // Use the tokenId from Google login
         const oktoUser = await oktoClient.loginUsingOAuth({
           idToken: user.tokenId,  // Google ID token
           provider: "google",
         });
-        
-        
+
+
         console.log('Connecting wallet for user:', oktoUser.email);
 
         const accounts = await getAccount(oktoClient);
@@ -815,11 +823,7 @@ const SnakeGame = ({ user }) => {
                   <div key={index} className="order-item">
                     <div>Network: {order.networkName || 'N/A'}</div>
                     <div>Status: {order.status || 'N/A'}</div>
-                    <div>Amount: ₹{
-                      order.details?.amount ?
-                        convertWeiToInr(order.details.amount) :
-                        '0.00'
-                    } INR</div>
+                    <div>Amount: ₹{convertedAmounts[index]} INR</div>
                   </div>
                 ))
               ) : (
