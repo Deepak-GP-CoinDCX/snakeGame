@@ -96,6 +96,76 @@
   background: rgba(76, 175, 80, 0.2);
 }
 
+.tier-system {
+  margin: 2rem 0;
+}
+
+.tiers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.tier-card {
+  background: rgba(76, 175, 80, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  transition: transform 0.2s, background 0.2s;
+  backdrop-filter: blur(5px);
+}
+
+.tier-card:hover {
+  transform: translateY(-5px);
+  background: rgba(76, 175, 80, 0.2);
+}
+
+.tier-card .tier-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.tier-card h3 {
+  color: #4CAF50;
+  margin: 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.tier-card p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.reward-info {
+  margin: 2rem 0;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.reward-info ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reward-info li {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  transition: transform 0.2s;
+}
+
+.reward-info li:hover {
+  transform: translateX(10px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
 @media (max-width: 768px) {
   .introduction-container {
     padding: 0 1rem;
@@ -120,5 +190,23 @@
   
   .game-features li:hover {
     transform: none;
+  }
+
+  .tiers-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tier-card:hover {
+    transform: none;
+  }
+
+  .reward-info li:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .tiers-grid {
+    grid-template-columns: 1fr;
   }
 }
