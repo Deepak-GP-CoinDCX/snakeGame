@@ -14,45 +14,46 @@ const GAME_CONFIG = {
   GRID_SIZE: 20,
   INITIAL_SPEED: 150,
   ENTRY_FEE: 1,
-  BASE_THRESHOLD: 500,
+  BASE_THRESHOLD: 50,
   ANIMATION_DURATION: 800,
-  HOUSE_WALLET: '0x1234567890123456789012345678901234567890'
+  HOUSE_WALLET: '0x1234567890123456789012345678901234567890',
+  FOOD_REWARD: 10
 };
 
 const TIERS = [
-  {
-    name: 'Noob',
-    minScore: 0,
-    maxScore: 500,
-    multiplier: 1,
+  { 
+    name: 'Noob', 
+    minScore: 0, 
+    maxScore: 50, 
+    multiplier: 0,
     speedMultiplier: 1
   },
-  {
-    name: 'Ape',
-    minScore: 500,
-    maxScore: 1000,
-    multiplier: 1.5,
+  { 
+    name: 'Ape', 
+    minScore: 50, 
+    maxScore: 100, 
+    multiplier: 0.1,
     speedMultiplier: 0.85
   },
-  {
-    name: 'Hodler',
-    minScore: 1000,
-    maxScore: 2000,
-    multiplier: 2,
+  { 
+    name: 'Hodler', 
+    minScore: 100, 
+    maxScore: 150, 
+    multiplier: 0.2,
     speedMultiplier: 0.7
   },
-  {
-    name: 'Diamond Hands',
-    minScore: 2000,
-    maxScore: 3500,
-    multiplier: 3,
+  { 
+    name: 'Diamond Hands', 
+    minScore: 150, 
+    maxScore: 200, 
+    multiplier: 0.3,
     speedMultiplier: 0.6
   },
-  {
-    name: 'Satoshi',
-    minScore: 3500,
-    maxScore: Infinity,
-    multiplier: 5,
+  { 
+    name: 'Satoshi', 
+    minScore: 200, 
+    maxScore: Infinity, 
+    multiplier: 0.4,
     speedMultiplier: 0.5
   }
 ];
@@ -231,9 +232,9 @@ const SnakeGame = ({ user }) => {
     clearInterval(gameLoopRef.current);
     clearInterval(timeIntervalRef.current);
     setGameStatus('ENDED');
-
-    const finalRewardUSDT = 0.1;
-    setReward(finalRewardUSDT);
+    
+    const finalReward = calculateReward();
+    const finalRewardUSDT = rewardToUsdt(finalReward);
 
     if (finalRewardUSDT > 0) {
       try {
@@ -305,8 +306,15 @@ const SnakeGame = ({ user }) => {
     if (score < GAME_CONFIG.BASE_THRESHOLD) return 0;
 
     const currentTier = getCurrentTier();
-    return Math.floor(score * currentTier.multiplier);
+    return GAME_CONFIG.ENTRY_FEE * (1 + currentTier.multiplier);
   }, [score, getCurrentTier]);
+
+  const rewardToUsdt = (rewardInInr) => {
+    // The ratio of INR to USDT
+    const usdRate = 87.1;
+    const rewardInUsdt = rewardInInr / usdRate;
+    return rewardInUsdt;
+  }
 
   useEffect(() => {
     const potentialReward = calculateReward();
@@ -389,9 +397,8 @@ const SnakeGame = ({ user }) => {
       newSnake.unshift(head);
 
       if (head.x === food.x && head.y === food.y) {
-        const points = Math.floor(10 * getCurrentTier().multiplier);
         setScore(prevScore => {
-          const newScore = prevScore + points;
+          const newScore = prevScore + GAME_CONFIG.FOOD_REWARD;
           return newScore;
         });
         setFood(generateFood());
@@ -400,7 +407,7 @@ const SnakeGame = ({ user }) => {
         setPulseFrame(0);
         const pixelX = head.x * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2;
         const pixelY = head.y * GAME_CONFIG.GRID_SIZE;
-        addScorePopup(pixelX, pixelY, points);
+        addScorePopup(pixelX, pixelY, GAME_CONFIG.FOOD_REWARD);
         addRippleEffect(pixelX, pixelY + GAME_CONFIG.GRID_SIZE / 2);
 
         // Animate each segment of the snake with a delay
@@ -863,8 +870,8 @@ const SnakeGame = ({ user }) => {
               </span>
             </div>
             <div className="stat-row">
-              <span>Multiplier</span>
-              <span>{getCurrentTier().multiplier}x</span>
+              <span>Bonus</span>
+              <span>{(getCurrentTier().multiplier * 100)}%</span>
             </div>
           </div>
 
@@ -929,11 +936,11 @@ const SnakeGame = ({ user }) => {
             </div>
             <div className="stat-row">
               <span>Potential Reward</span>
-              <span className="reward">{reward.toFixed(2)} tokens</span>
+              <span className="reward">{reward.toFixed(2)} INR</span>
             </div>
             <div className="stat-row">
               <span>Entry Fee</span>
-              <span>{GAME_CONFIG.ENTRY_FEE} tokens</span>
+              <span>{GAME_CONFIG.ENTRY_FEE} INR</span>
             </div>
           </div>
 
