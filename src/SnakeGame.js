@@ -9,7 +9,7 @@ import { useGlobalOktoClient } from './context/OktoClientContext';
 import { ethers } from 'ethers';
 
 const GAME_CONFIG = {
-  DEV_MODE: true, // Set to false for okto web3 
+  DEV_MODE: false, // Set to false for okto web3 
   BOARD_WIDTH: 400,
   BOARD_HEIGHT: 400,
   GRID_SIZE: 20,
@@ -22,38 +22,38 @@ const GAME_CONFIG = {
 };
 
 const TIERS = [
-  { 
-    name: 'Noob', 
-    minScore: 0, 
-    maxScore: 50, 
+  {
+    name: 'Noob',
+    minScore: 0,
+    maxScore: 50,
     multiplier: 0,
     speedMultiplier: 1
   },
-  { 
-    name: 'Ape', 
-    minScore: 50, 
-    maxScore: 100, 
+  {
+    name: 'Ape',
+    minScore: 50,
+    maxScore: 100,
     multiplier: 0.1,
     speedMultiplier: 0.85
   },
-  { 
-    name: 'Hodler', 
-    minScore: 100, 
-    maxScore: 150, 
+  {
+    name: 'Hodler',
+    minScore: 100,
+    maxScore: 150,
     multiplier: 0.2,
     speedMultiplier: 0.7
   },
-  { 
+  {
     name: 'Moon Lander', // Changed from Diamond Hands
-    minScore: 150, 
-    maxScore: 200, 
+    minScore: 150,
+    maxScore: 200,
     multiplier: 0.3,
     speedMultiplier: 0.6
   },
-  { 
-    name: 'Satoshi', 
-    minScore: 200, 
-    maxScore: Infinity, 
+  {
+    name: 'Satoshi',
+    minScore: 200,
+    maxScore: Infinity,
     multiplier: 0.4,
     speedMultiplier: 0.5
   }
@@ -321,17 +321,17 @@ const SnakeGame = ({ user }) => {
     const element = document.createElement('div');
     element.className = 'score-popup';
     element.textContent = points;
-    
+
     // Position relative to game board
     const gameBoard = document.querySelector('.game-board');
     if (gameBoard) {
       const boardRect = gameBoard.getBoundingClientRect();
       element.style.left = `${x - 10}px`; // Offset to center
       element.style.top = `${y - 20}px`; // Start a bit above the food
-      
+
       // Add to game container instead of game board for proper z-index handling
       document.querySelector('.game-container').appendChild(element);
-      
+
       setTimeout(() => {
         element.remove();
       }, GAME_CONFIG.ANIMATION_DURATION);
@@ -387,9 +387,9 @@ const SnakeGame = ({ user }) => {
         // Calculate position for score popup relative to canvas
         const pixelX = head.x * GAME_CONFIG.GRID_SIZE + canvasRef.current.offsetLeft;
         const pixelY = head.y * GAME_CONFIG.GRID_SIZE + canvasRef.current.offsetTop;
-        
+
         addScorePopup(pixelX, pixelY, '+10');
-        
+
         // Add ripple effect
         addRippleEffect(pixelX, pixelY + GAME_CONFIG.GRID_SIZE / 2);
 
@@ -638,17 +638,17 @@ const SnakeGame = ({ user }) => {
     try {
       // Get MATIC/INR rate from token data
       const maticToInrRate = Number(token.holdingsPriceInr) / Number(token.balance);
-      
+
       // Convert Wei to MATIC (1 MATIC = 10^18 Wei)
       const maticAmount = ethers.utils.formatEther(weiAmount.toString());
-      
+
       // Convert MATIC to INR using the rate
       const inrAmount = Number(maticAmount) * maticToInrRate;
-  
+
       console.log(`Converting ${weiAmount} Wei`);
       console.log(`= ${maticAmount} MATIC`);
       console.log(`= ₹${inrAmount.toFixed(2)} INR (Rate: ₹${maticToInrRate.toFixed(2)}/MATIC)`);
-      
+
       return inrAmount.toFixed(2);
     } catch (error) {
       console.error('Error converting Wei to INR:', error);
@@ -727,10 +727,10 @@ const SnakeGame = ({ user }) => {
       // Extract items from the response data
       const orderHistory = response || [];
       console.log('Processed Order History:', orderHistory);
-      const token=await fetchPortfolio();
+      const token = await fetchPortfolio();
       // Convert amounts
       const amounts = await Promise.all(orderHistory.map(async (order) => {
-        const amountInInr = order.details?.amount ? await convertWeiToMaticInInr(order.details.amount,token) : '0.00';
+        const amountInInr = order.details?.amount ? await convertWeiToMaticInInr(order.details.amount, token) : '0.00';
         return amountInInr;
       }));
 
@@ -925,7 +925,7 @@ const SnakeGame = ({ user }) => {
                 ))
               ) : (
                 <div className="no-orders">
-                  {selectedFilter === 'all' 
+                  {selectedFilter === 'all'
                     ? 'No orders found'
                     : `No ${selectedFilter.replace('_', ' ')} orders found`}
                 </div>
