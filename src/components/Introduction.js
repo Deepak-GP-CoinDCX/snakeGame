@@ -10,8 +10,7 @@ const Introduction = () => {
 
         <div className="game-description">
           <p>
-            Experience the classic Snake Game with a modern twist! Control your snake,
-            collect food, and win exciting USDT rewards while avoiding collisions.
+            Experience the classic Snake Game with a modern twist! Control your snake and collect food to win exciting MATIC rewards while avoiding collisions.
           </p>
         </div>
 
@@ -20,20 +19,21 @@ const Introduction = () => {
           <div className="instruction-steps">
             <div className="step">
               <div className="step-number">1</div>
-              <p>Use arrow keys (↑, ↓, ←, →) to control the snake's direction</p>
+              <p>Sign in to play and win rewards</p>
             </div>
             <div className="step">
               <div className="step-number">2</div>
-              <p>Collect food (shown as dots) to grow your snake and earn points</p>
+              <p>Use arrow keys (↑, ↓, ←, →) to control the snake's direction</p>
             </div>
             <div className="step">
               <div className="step-number">3</div>
-              <p>Avoid hitting the walls and your self</p>
+              <p>Collect food (shown as dots) to grow your snake and earn points</p>
             </div>
             <div className="step">
               <div className="step-number">4</div>
-              <p>Sign in to play and win rewards</p>
+              <p>Avoid hitting the walls and your self</p>
             </div>
+
           </div>
         </div>
 
@@ -76,10 +76,10 @@ const Introduction = () => {
         <div className="reward-info">
           <h2>Reward System</h2>
           <ul>
-            <li>Entry fee: 1 INR per game</li>
+            <li>Entry fee: 2 INR worth of MATIC per game</li>
             <li>Base threshold: 50 points to qualify for rewards</li>
             <li>Higher tiers earn bonus rewards through multipliers</li>
-            <li>Rewards are paid in USDT to your wallet</li>
+            <li>Rewards are paid in MATIC to your wallet</li>
             <li>Each food collected adds 10 points to your score</li>
           </ul>
         </div>
