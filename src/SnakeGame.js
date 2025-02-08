@@ -4,7 +4,7 @@ import { LoadingDialog } from './components/LoadingDialog';
 import { sdk } from './sdk/web3SDK';
 import './SnakeGame.css';
 import { useAuth } from './context/AuthContext';
-import { Address,getAccount,getPortfolio, tokenTransfer, useOkto } from "@okto_web3/react-sdk";
+import { Address, getAccount, getPortfolio, tokenTransfer, useOkto, getOrdersHistory } from "@okto_web3/react-sdk";
 import { useGlobalOktoClient } from './context/OktoClientContext';
 import { ethers } from 'ethers';
 
@@ -20,38 +20,38 @@ const GAME_CONFIG = {
 };
 
 const TIERS = [
-  { 
-    name: 'Noob', 
-    minScore: 0, 
-    maxScore: 500, 
+  {
+    name: 'Noob',
+    minScore: 0,
+    maxScore: 500,
     multiplier: 1,
     speedMultiplier: 1
   },
-  { 
-    name: 'Ape', 
-    minScore: 500, 
-    maxScore: 1000, 
+  {
+    name: 'Ape',
+    minScore: 500,
+    maxScore: 1000,
     multiplier: 1.5,
     speedMultiplier: 0.85
   },
-  { 
-    name: 'Hodler', 
-    minScore: 1000, 
-    maxScore: 2000, 
+  {
+    name: 'Hodler',
+    minScore: 1000,
+    maxScore: 2000,
     multiplier: 2,
     speedMultiplier: 0.7
   },
-  { 
-    name: 'Diamond Hands', 
-    minScore: 2000, 
-    maxScore: 3500, 
+  {
+    name: 'Diamond Hands',
+    minScore: 2000,
+    maxScore: 3500,
     multiplier: 3,
     speedMultiplier: 0.6
   },
-  { 
-    name: 'Satoshi', 
-    minScore: 3500, 
-    maxScore: Infinity, 
+  {
+    name: 'Satoshi',
+    minScore: 3500,
+    maxScore: Infinity,
     multiplier: 5,
     speedMultiplier: 0.5
   }
@@ -88,7 +88,10 @@ const SnakeGame = ({ user }) => {
   const [portfolioBalance, setPortfolioBalance] = useState(0);
   const [animations, setAnimations] = useState([]);
   const [pulseFrame, setPulseFrame] = useState(0);
-  
+  const [orders, setOrders] = useState([]);
+  const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [showCopyNotification, setShowCopyNotification] = useState(false);
+
   // Web3 state
   const [walletAddress, setWalletAddress] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -100,7 +103,7 @@ const SnakeGame = ({ user }) => {
   const timeIntervalRef = useRef(null);
   const animationFrameRef = useRef(null);
   const canvasRef = useRef(null);
-  const oktoClient = useGlobalOktoClient(); 
+  const oktoClient = useGlobalOktoClient();
 
   // Helper functions
   const getCurrentTier = useCallback(() => {
@@ -124,21 +127,21 @@ const SnakeGame = ({ user }) => {
   };
   const transferTokensWithPrivateKey = async (recipientAddress, amount) => {
     try {
-      console.log("amount",amount);
-      const portfolio=await fetchPortfolio();
-      const usdRate=Number(portfolio.aggregatedData.totalHoldingPriceInr)/Number(portfolio.aggregatedData.totalHoldingPriceUsdt);
-      console.log("usdRate",usdRate);
-      const finalRewardInUsd=amount/usdRate;
-      console.log("finalRewardInUsd",finalRewardInUsd);
+      console.log("amount", amount);
+      const portfolio = await fetchPortfolio();
+      const usdRate = Number(portfolio.aggregatedData.totalHoldingPriceInr) / Number(portfolio.aggregatedData.totalHoldingPriceUsdt);
+      console.log("usdRate", usdRate);
+      const finalRewardInUsd = amount / usdRate;
+      console.log("finalRewardInUsd", finalRewardInUsd);
       const rewardInWei = await convertUsdToWei(finalRewardInUsd);
       const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
       const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
-      
+
       const tx = {
         to: recipientAddress,
         value: rewardInWei
       };
-  
+
       const transaction = await wallet.sendTransaction(tx);
       await transaction.wait();
       console.log('Transfer successful:', transaction.hash);
@@ -153,11 +156,11 @@ const SnakeGame = ({ user }) => {
     try {
       const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
       const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
-      
+
       const usdtContract = new ethers.Contract(USDT_ADDRESS, ERC20_ABI, wallet);
       const decimals = await usdtContract.decimals();
       const amountInSmallestUnit = ethers.utils.parseUnits(usdtAmount.toString(), decimals);
-      
+
       // Check USDT balance
       const balance = await usdtContract.balanceOf(wallet.address);
       console.log('USDT balance:', ethers.utils.formatUnits(balance, decimals));
@@ -168,19 +171,19 @@ const SnakeGame = ({ user }) => {
       // Get gas price and estimate gas
       const gasPrice = await provider.getGasPrice();
       const gasLimit = await usdtContract.estimateGas.transfer(recipientAddress, amountInSmallestUnit);
-      
+
       // Add 30% buffer to gas price and limit for safety
       const adjustedGasPrice = gasPrice.mul(130).div(100);
       const adjustedGasLimit = gasLimit.mul(130).div(100);
-      
+
       // Calculate total gas cost in MATIC
       const totalGasCost = adjustedGasPrice.mul(adjustedGasLimit);
-      
+
       // Check MATIC balance
       const maticBalance = await provider.getBalance(wallet.address);
       console.log('Gas needed (MATIC):', ethers.utils.formatEther(totalGasCost));
       console.log('MATIC balance:', ethers.utils.formatEther(maticBalance));
-      
+
       if (maticBalance.lt(totalGasCost)) {
         const neededMatic = ethers.utils.formatEther(totalGasCost);
         throw new Error(`Insufficient MATIC for gas. Need ${neededMatic} MATIC`);
@@ -197,7 +200,7 @@ const SnakeGame = ({ user }) => {
       console.log('Gas used:', receipt.gasUsed.toString());
       console.log('Gas price:', ethers.utils.formatUnits(receipt.effectiveGasPrice, 'gwei'), 'gwei');
       console.log('Total gas cost:', ethers.utils.formatEther(receipt.gasUsed.mul(receipt.effectiveGasPrice)), 'MATIC');
-      
+
       return receipt.transactionHash;
     } catch (error) {
       console.error('USDT transfer error:', error);
@@ -217,10 +220,10 @@ const SnakeGame = ({ user }) => {
     clearInterval(gameLoopRef.current);
     clearInterval(timeIntervalRef.current);
     setGameStatus('ENDED');
-    
+
     const finalRewardUSDT = 0.1;
     setReward(finalRewardUSDT);
-    
+
     if (finalRewardUSDT > 0) {
       try {
         setLoadingMessage('Calculating gas fees...');
@@ -228,7 +231,7 @@ const SnakeGame = ({ user }) => {
 
         const txHash = await transferUSDT(walletAddress, finalRewardUSDT);
         console.log('USDT Reward transfer successful:', txHash);
-        
+
         setLoadingMessage('Transfer successful! Updating balance...');
         await fetchPortfolio();
         setError(null);
@@ -250,8 +253,8 @@ const SnakeGame = ({ user }) => {
       await transferTokenToTreasury();
 
       // Update portfolio balance
-    await fetchPortfolio();
-      
+      await fetchPortfolio();
+
       // Reset game state with initial snake of length 3
       const initialSnake = [
         { x: 10, y: 10 },
@@ -272,7 +275,7 @@ const SnakeGame = ({ user }) => {
       // Start game loops
       const currentTier = getCurrentTier();
       const speed = GAME_CONFIG.INITIAL_SPEED * currentTier.speedMultiplier;
-      
+
       gameLoopRef.current = setInterval(() => {
         moveSnake();
       }, speed);
@@ -289,7 +292,7 @@ const SnakeGame = ({ user }) => {
 
   const calculateReward = useCallback(() => {
     if (score < GAME_CONFIG.BASE_THRESHOLD) return 0;
-    
+
     const currentTier = getCurrentTier();
     return Math.floor(score * currentTier.multiplier);
   }, [score, getCurrentTier]);
@@ -319,7 +322,7 @@ const SnakeGame = ({ user }) => {
     element.textContent = `+${points}`;
     element.style.left = `${x}px`;
     element.style.top = `${y}px`;
-    
+
     const gameBoard = document.querySelector('.game-board');
     if (gameBoard) {
       gameBoard.appendChild(element);
@@ -337,7 +340,7 @@ const SnakeGame = ({ user }) => {
     element.style.top = `${y - 20}px`;
     element.style.width = '40px';
     element.style.height = '40px';
-    
+
     const gameBoard = document.querySelector('.game-board');
     if (gameBoard) {
       gameBoard.appendChild(element);
@@ -358,9 +361,9 @@ const SnakeGame = ({ user }) => {
       head.y += direction.y;
 
       if (
-        head.x < 0 || 
-        head.x >= GAME_CONFIG.BOARD_WIDTH / GAME_CONFIG.GRID_SIZE || 
-        head.y < 0 || 
+        head.x < 0 ||
+        head.x >= GAME_CONFIG.BOARD_WIDTH / GAME_CONFIG.GRID_SIZE ||
+        head.y < 0 ||
         head.y >= GAME_CONFIG.BOARD_HEIGHT / GAME_CONFIG.GRID_SIZE
       ) {
         gameOver();
@@ -381,14 +384,14 @@ const SnakeGame = ({ user }) => {
           return newScore;
         });
         setFood(generateFood());
-        
+
         // Trigger animations
         setPulseFrame(0);
         const pixelX = head.x * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2;
         const pixelY = head.y * GAME_CONFIG.GRID_SIZE;
         addScorePopup(pixelX, pixelY, points);
         addRippleEffect(pixelX, pixelY + GAME_CONFIG.GRID_SIZE / 2);
-        
+
         // Animate each segment of the snake with a delay
         newSnake.forEach((_, index) => {
           setTimeout(() => {
@@ -424,26 +427,26 @@ const SnakeGame = ({ user }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       e.preventDefault(); // Prevent scrolling
-      
+
       if (gameStatus === 'ENDED') return;
 
       switch (e.key) {
-        case 'ArrowUp': 
-          if (direction.y === 0) setDirection({ x: 0, y: -1 }); 
+        case 'ArrowUp':
+          if (direction.y === 0) setDirection({ x: 0, y: -1 });
           break;
-        case 'ArrowDown': 
-          if (direction.y === 0) setDirection({ x: 0, y: 1 }); 
+        case 'ArrowDown':
+          if (direction.y === 0) setDirection({ x: 0, y: 1 });
           break;
-        case 'ArrowLeft': 
-          if (direction.x === 0) setDirection({ x: -1, y: 0 }); 
+        case 'ArrowLeft':
+          if (direction.x === 0) setDirection({ x: -1, y: 0 });
           break;
-        case 'ArrowRight': 
-          if (direction.x === 0) setDirection({ x: 1, y: 0 }); 
+        case 'ArrowRight':
+          if (direction.x === 0) setDirection({ x: 1, y: 0 });
           break;
         case ' ':
-          setGameStatus(prev => 
-            prev === 'PLAYING' ? 'PAUSED' : 
-            prev === 'PAUSED' ? 'PLAYING' : prev
+          setGameStatus(prev =>
+            prev === 'PLAYING' ? 'PAUSED' :
+              prev === 'PAUSED' ? 'PLAYING' : prev
           );
           break;
         default:
@@ -465,9 +468,10 @@ const SnakeGame = ({ user }) => {
   }, [gameStatus, moveSnake, getCurrentTier]);
 
   useEffect(() => {
+    if (!canvasRef.current) return;  // <--- Add this null check
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
+
     ctx.clearRect(0, 0, GAME_CONFIG.BOARD_WIDTH, GAME_CONFIG.BOARD_HEIGHT);
 
     // Draw grid
@@ -490,14 +494,14 @@ const SnakeGame = ({ user }) => {
     snake.forEach((segment, index) => {
       const isAnimating = animations.some(anim => anim.index === index);
       const isPulsing = index === 0 && pulseFrame < PULSE_FRAMES.length;
-      
+
       const scale = isPulsing ? PULSE_FRAMES[pulseFrame] : 1;
       const glowIntensity = isAnimating ? 15 : (index === 0 ? 10 : 5);
 
       // Calculate center position for scaling
       const centerX = segment.x * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2;
       const centerY = segment.y * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2;
-      
+
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.scale(scale, scale);
@@ -512,11 +516,11 @@ const SnakeGame = ({ user }) => {
       );
       gradient.addColorStop(0, isAnimating ? '#64DD17' : '#4CAF50');
       gradient.addColorStop(1, isAnimating ? '#4CAF50' : '#45a049');
-      
+
       ctx.fillStyle = gradient;
       ctx.shadowColor = '#4CAF50';
       ctx.shadowBlur = glowIntensity;
-      
+
       const size = GAME_CONFIG.GRID_SIZE - 1;
       ctx.fillRect(
         segment.x * GAME_CONFIG.GRID_SIZE + (GAME_CONFIG.GRID_SIZE - size) / 2,
@@ -541,7 +545,7 @@ const SnakeGame = ({ user }) => {
           segment.y * GAME_CONFIG.GRID_SIZE + GAME_CONFIG.GRID_SIZE / 2
         );
       }
-      
+
       ctx.restore();
     });
 
@@ -566,7 +570,7 @@ const SnakeGame = ({ user }) => {
     try {
       const portfolio = await getPortfolio(oktoClient);
       //if not empty
-      if (portfolio.aggregatedData.totalHoldingPriceInr !==""){
+      if (portfolio.aggregatedData.totalHoldingPriceInr !== "") {
         setPortfolioBalance(Number(portfolio.aggregatedData.totalHoldingPriceInr));
       }
       return portfolio;
@@ -578,24 +582,45 @@ const SnakeGame = ({ user }) => {
   const refreshPortfolio = async () => {
     try {
       const portfolio = await getPortfolio(oktoClient);
-      if (portfolio.aggregatedData.totalHoldingPriceInr !==""){
+      if (portfolio.aggregatedData.totalHoldingPriceInr !== "") {
         setPortfolioBalance(Number(portfolio.aggregatedData.totalHoldingPriceInr));
       }
     } catch (error) {
       console.error('Error fetching portfolio:', error);
     }
   };
+
+  async function convertWeiToInr(weiAmount) {
+    try {
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr');
+      const data = await response.json();
+      const exchangeRate = data.ethereum.inr;
+
+      // Convert Wei to ETH (1 ETH = 10^18 Wei)
+      const ethAmount = weiAmount / 1e18;
+
+      // Convert ETH to INR
+      const inrAmount = ethAmount * exchangeRate;
+
+      return inrAmount.toFixed(2);
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+      return '0.00';
+    }
+  }
+
   async function convertUsdToWei(usdAmount) {
     try {
       const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
       const data = await response.json();
       const exchangeRate = data.ethereum.usd;
+
       // Convert USD to ETH
       const ethAmount = usdAmount / exchangeRate;
-  
+
       // Convert ETH to Wei (1 ETH = 10^18 Wei)
       const weiAmount = ethAmount * 1e18;
-      const weiBigInt =  Number(Math.floor(weiAmount).toString());
+      const weiBigInt = Number(Math.floor(weiAmount).toString());
 
       console.log(`${usdAmount} USD is approximately ${weiAmount} Wei`);
       return weiBigInt;
@@ -604,56 +629,83 @@ const SnakeGame = ({ user }) => {
     }
   }
 
-  const transferTokenToTreasury=async () => {
-    const tokenToTransfer=Number(GAME_CONFIG.ENTRY_FEE)/87.62;
-    var weiAmount=await convertUsdToWei(tokenToTransfer)
+  const transferTokenToTreasury = async () => {
+    const tokenToTransfer = Number(GAME_CONFIG.ENTRY_FEE) / 87.62;
+    var weiAmount = await convertUsdToWei(tokenToTransfer)
+
+
 
     const transferParams = {
       amount: weiAmount,
       recipient: "0x117419d4D598129453A89E37e2dd964b09E7B5E6",
       chain: "eip155:137",
     };
-    const userOp=await tokenTransfer(oktoClient,transferParams );
+    const userOp = await tokenTransfer(oktoClient, transferParams);
     console.log(userOp);
     const signedUserOp = await oktoClient.signUserOp(userOp);
     console.log(signedUserOp);
     const tx = await oktoClient.executeUserOp(signedUserOp);
-    console.log("txHash",tx);
-
+    console.log("txHash" - tx);
   }
 
-  
+  const fetchOrderHistory = async () => {
+    try {
+      setIsLoading(true);
+      setLoadingMessage('Fetching order history...');
+      const response = await getOrdersHistory(oktoClient);
+      console.log('Order History Response:', response);
 
+      // Extract items from the response data
+      const orderHistory = response?.data?.items || [];
+      console.log('Processed Order History:', orderHistory);
+
+      setOrders(orderHistory);
+      setShowOrderHistory(true);
+    } catch (error) {
+      console.error('Error fetching order history:', error);
+      setError('Failed to fetch order history: ' + error.message);
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (walletAddress) {
+      try {
+        await navigator.clipboard.writeText(walletAddress);
+        setShowCopyNotification(true);
+        setTimeout(() => setShowCopyNotification(false), 2000); // Hide after 2 seconds
+      } catch (err) {
+        console.error('Failed to copy address:', err);
+      }
+    }
+  };
 
   // Initialize Web3 connection
   useEffect(() => {
     const initializeWeb3 = async () => {
-      if (!user?.email || !user?.tokenId) {  // Check for tokenId
-        setGameStatus('READY');
-        return;
-      }
-
       try {
         setIsLoading(true);
         setLoadingMessage('Connecting to wallet...');
-        
+
         // Use the tokenId from Google login
         const oktoUser = await oktoClient.loginUsingOAuth({
           idToken: user.tokenId,  // Google ID token
           provider: "google",
         });
-        
+
         console.log('Connecting wallet for user:', oktoUser.email);
-        
+
         const accounts = await getAccount(oktoClient);
         //looo and find arbitrum
         const address = accounts.find(account => account.networkName === 'POLYGON').address;
         console.log('Wallet connected:', address); // Debug log
         setWalletAddress(address);
-        
+
         setLoadingMessage('Fetching portfolio...');
         fetchPortfolio();
-        
+
         setGameStatus('READY');
         setError(null);
       } catch (err) {
@@ -668,8 +720,56 @@ const SnakeGame = ({ user }) => {
     initializeWeb3();
   }, [user?.email, user?.tokenId]); // Add tokenId to dependencies
 
+  // Early return if user is not logged in
+  if (!user?.email) {
+    return (
+      <div style={{ textAlign: 'center', marginTop: '20px' }}>
+        <p></p>
+      </div>
+    );
+  }
+
   return (
     <div className="game-container">
+      {gameStatus !== 'LOADING' && user?.email && (
+        <div className="order-history-button">
+          <button onClick={fetchOrderHistory}>
+            Order History 📜
+          </button>
+        </div>
+      )}
+
+      {showOrderHistory && (
+        <div className="order-history-dialog">
+          <div className="order-history-content">
+            <h3>Order History</h3>
+            <button
+              className="close-button"
+              onClick={() => setShowOrderHistory(false)}
+            >
+              ✕
+            </button>
+            <div className="orders-list">
+              {orders && orders.length > 0 ? (
+                orders.map((order, index) => (
+                  <div key={index} className="order-item">
+                    <div>Network: {order.networkName || 'N/A'}</div>
+                    <div>Status: {order.status || 'N/A'}</div>
+                    <div>Amount: ₹{
+                      order.details?.amount ?
+                        convertWeiToInr(order.details.amount) :
+                        '0.00'
+                    } INR</div>
+                  </div>
+                ))
+              ) : (
+                <div className="no-orders">No orders found</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="game-content">
         <canvas
           ref={canvasRef}
@@ -677,7 +777,7 @@ const SnakeGame = ({ user }) => {
           height={GAME_CONFIG.BOARD_HEIGHT}
           className={`game-board ${getStatusClass()}`}
         />
-        
+
         <div className="game-stats">
           <div className="stats-section">
             <div className="stat-row">
@@ -720,7 +820,7 @@ const SnakeGame = ({ user }) => {
               <span>Portfolio Balance</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>₹{portfolioBalance.toFixed(2)} INR</span>
-                <button 
+                <button
                   onClick={refreshPortfolio}
                   style={{
                     background: 'none',
@@ -731,6 +831,47 @@ const SnakeGame = ({ user }) => {
                 >
                   🔄
                 </button>
+              </div>
+            </div>
+            <div className="stat-row">
+              <span>Address</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                <span style={{ fontSize: '0.8em', wordBreak: 'break-all' }}>
+                  {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Not connected'}
+                </span>
+                {walletAddress && (
+                  <>
+                    <button
+                      onClick={copyToClipboard}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        fontSize: '1em'
+                      }}
+                      title="Copy address"
+                    >
+                      📋
+                    </button>
+                    {showCopyNotification && (
+                      <div style={{
+                        position: 'absolute',
+                        right: '-80px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: '#4CAF50',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.8em',
+                        animation: 'fadeIn 0.3s'
+                      }}>
+                        Copied!
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
             <div className="stat-row">
@@ -748,11 +889,11 @@ const SnakeGame = ({ user }) => {
               {error}
             </div>
           )}
-          
+
 
           <div className="game-controls">
             {gameStatus === 'READY' && (
-              <button 
+              <button
                 onClick={handlePlayClick}
                 disabled={isLoading || portfolioBalance < GAME_CONFIG.ENTRY_FEE}
                 className="play-button"
@@ -761,7 +902,7 @@ const SnakeGame = ({ user }) => {
               </button>
             )}
             {gameStatus === 'ENDED' && (
-              <button 
+              <button
                 onClick={handlePlayClick}
                 disabled={isLoading || portfolioBalance < GAME_CONFIG.ENTRY_FEE}
                 className="play-button"
