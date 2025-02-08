@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import SnakeGame from './SnakeGame';
 import Login from './Login';
 import { GoogleLogin } from '@react-oauth/google';
+
 function AppContent() {
   const { user, logout } = useAuth();
 
@@ -11,15 +12,14 @@ function AppContent() {
       <header className="App-header">
         <h1>Snake Game</h1>
         {!user ? (
-          <div className="login-container">
-            <p>Please login to play</p>
-            <Login/>
+          <div className="login-container" style={{ height: '100px' }}>
+            <Login />
           </div>
         ) : (
           <div className="user-info">
             <img src={user.picture} alt={user.name} className="user-avatar" />
             <span>Welcome, {user.name}!</span>
-            <button 
+            <button
               onClick={logout}
               className="logout-button"
               style={{
@@ -37,7 +37,7 @@ function AppContent() {
           </div>
         )}
       </header>
-      
+
       <main>
         <SnakeGame user={user} />
       </main>
