@@ -399,7 +399,7 @@ const SnakeGame = ({ user }) => {
 
       if (head.x === food.x && head.y === food.y) {
         setScore(prevScore => {
-          const newScore = prevScore + GAME_CONFIG.FOOD_REWARD;
+          const newScore = prevScore + GAME_CONFIG.FOOD_REWARD/2;
           return newScore;
         });
         setFood(generateFood());
