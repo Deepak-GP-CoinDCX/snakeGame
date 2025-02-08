@@ -5,6 +5,7 @@ import { useAuth } from './context/AuthContext';
 import './Login.css';
 import { getPortfolio, tokenTransfer, useOkto } from "@okto_web3/react-sdk";
 import { useGlobalOktoClient } from './context/OktoClientContext';
+import Introduction from './components/Introduction';
 
 const Login = () => {
   const { login } = useAuth();
@@ -16,14 +17,9 @@ const Login = () => {
       name: decoded.name,
       email: decoded.email,
       picture: decoded.picture,
-      tokenId: credentialResponse.credential, // Include the raw token
+      tokenId: credentialResponse.credential,
     });
     console.log(credentialResponse);
-    // const user = await oktoClient.loginUsingOAuth({
-    //   idToken: credentialResponse.credential,
-    //   provider: "google",
-    // });
-    // console.log(user);
   };
 
   const handleError = () => {
@@ -31,10 +27,8 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h1>Snake Game</h1>
-        <p>Sign in to play and save your scores!</p>
+    <div className="login-container" style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)' }}>
+      <div className="login-header">
         <div className="google-button-container">
           <GoogleLogin
             onSuccess={handleSuccess}
@@ -42,6 +36,9 @@ const Login = () => {
             useOneTap
           />
         </div>
+      </div>
+      <div className="login-content">
+        <Introduction />
       </div>
     </div>
   );

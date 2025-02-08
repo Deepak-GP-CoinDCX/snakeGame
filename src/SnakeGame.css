@@ -12,6 +12,7 @@
   display: flex;
   flex-direction: row;
   gap: 20px;
+  align-items: flex-start;
 }
 
 .game-board {
@@ -37,18 +38,30 @@
 
 .game-stats {
   width: 300px;
-  padding: 20px;
+  padding: 15px;
   background-color: #333;
   border-radius: 8px;
   color: #fff;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .stats-section {
-  margin-bottom: 20px;
-  padding: 15px;
+  padding: 12px;
   background-color: #404040;
   border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
 }
 
 .stat-row {
@@ -379,83 +392,99 @@
 .order-history-button {
   position: absolute;
   top: 120px;
-  /* Changed from 80px to 120px to move it further down */
   right: 20px;
   z-index: 1000;
 }
 
 .order-history-button button {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
   padding: 8px 16px;
-  background: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  border-radius: 20px;
   cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(5px);
 }
 
 .order-history-button button:hover {
-  background: #45a049;
+  background: rgba(76, 175, 80, 0.3);
+  border-color: rgba(76, 175, 80, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.1);
+}
+
+.order-history-button button:active {
+  transform: translateY(0);
+}
+
+.order-history-button svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
 }
 
 .order-history-dialog {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.order-history-content {
-  background: #1a1a1a;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #333;
   padding: 20px;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 600px;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  max-width: 90%;
+  width: 500px;
   max-height: 80vh;
   overflow-y: auto;
-  position: relative;
-}
-
-.order-history-content h3 {
-  margin: 0 0 20px 0;
+  z-index: 1001;
+  border: 1px solid rgba(76, 175, 80, 0.2);
   color: white;
 }
 
-.close-button {
+.order-history-dialog h2 {
+  color: #4CAF50;
+  margin-bottom: 16px;
+  font-size: 1.5rem;
+}
+
+.order-history-dialog ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.order-history-dialog li {
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(76, 175, 80, 0.1);
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.order-history-dialog .close-button {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   background: none;
   border: none;
-  color: white;
-  font-size: 20px;
+  color: #999;
   cursor: pointer;
+  padding: 4px;
+  font-size: 1.2rem;
+  transition: color 0.2s;
 }
 
-.orders-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.order-item {
-  background: #2a2a2a;
-  padding: 15px;
-  border-radius: 4px;
-  color: white;
-}
-
-.no-orders {
-  color: #888;
-  text-align: center;
-  padding: 20px;
+.order-history-dialog .close-button:hover {
+  color: #fff;
 }
 
 @media (max-width: 768px) {
